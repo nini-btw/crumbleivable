@@ -1,0 +1,325 @@
+@import "tailwindcss";
+
+@theme {
+  /* Brand Colors */
+  --color-pink-50: #fff0f5;
+  --color-pink-100: #ffd6e7;
+  --color-pink-400: #f77bad;
+  --color-pink-500: #f4538a;
+  --color-pink-600: #d63a72;
+
+  /* Neutrals */
+  --color-cream: #fdf6ee;
+  --color-sand: #f0e6d6;
+  --color-brown-100: #e8d5c0;
+  --color-brown-400: #a07850;
+  --color-brown-700: #5c3d2e;
+  --color-brown-900: #2c1810;
+
+  /* Font Families */
+  --font-display: var(--font-comfortaa), "Comfortaa", system-ui, sans-serif;
+  --font-body: var(--font-comfortaa), "Comfortaa", system-ui, sans-serif;
+  --font-heading: var(--font-comfortaa), "Comfortaa", system-ui, sans-serif;
+  --font-arabic: var(--font-arabic), "Noto Kufi Arabic", system-ui, sans-serif;
+
+  /* Shadows */
+  --shadow-warm: 0 2px 12px rgba(44, 24, 16, 0.08);
+  --shadow-warm-lg: 0 8px 32px rgba(44, 24, 16, 0.16);
+  --shadow-pink: 0 8px 24px rgba(244, 83, 138, 0.4);
+
+  /* Custom utilities */
+  --container-site: 1400px;
+}
+
+/* Base styles */
+html {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-brown-900);
+  font-family: var(--font-body);
+  overflow-x: visible;
+  width: 100%;
+  max-width: 100vw;
+}
+
+/* All headings use Comfortaa font */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display,
+.font-heading {
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+/* Arabic font support */
+.font-arabic,
+[dir="rtl"] body,
+[dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6 {
+  font-family: var(--font-arabic);
+}
+
+/* Body font utility */
+.font-body {
+  font-family: var(--font-body);
+}
+
+/* Numbers styling - optimized for Comfortaa */
+.font-numbers,
+time,
+.price,
+[data-numbers] {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Global cursor pointer for interactive elements */
+button,
+a,
+select,
+label,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Label text style */
+.text-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Container utility */
+.container-site {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  max-width: 1400px;
+}
+
+@media (min-width: 640px) {
+  .container-site {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-site {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+/* Product grid */
+.grid-products {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+@media (min-width: 640px) {
+  .grid-products {
+    gap: 1.5rem;
+  }
+}
+
+/* Custom themed select/dropdown styles */
+select,
+select.theme-select {
+  appearance: none;
+  background-color: white;
+  border: 2px solid var(--color-brown-100);
+  border-radius: 9999px;
+  padding: 0.5rem 2.5rem 0.5rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-brown-700);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C3D2E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+select:focus,
+select.theme-select:focus {
+  outline: none;
+  border-color: var(--color-pink-500);
+  box-shadow: 0 0 0 3px rgba(244, 83, 138, 0.15);
+}
+
+select:hover,
+select.theme-select:hover {
+  border-color: var(--color-pink-400);
+}
+
+/* Date and time input styling */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  appearance: none;
+  background-color: white;
+  border: 2px solid var(--color-brown-100);
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-brown-700);
+  transition: all 0.2s ease;
+}
+
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: var(--color-pink-500);
+  box-shadow: 0 0 0 3px rgba(244, 83, 138, 0.15);
+}
+
+/* Remove default calendar icon overlap */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  opacity: 0.6;
+  cursor: pointer;
+  margin-left: 0.5rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-sand);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-brown-100);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brown-400);
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--color-pink-100);
+  color: var(--color-brown-900);
+}
+
+/* Focus visible styles */
+:focus-visible {
+  outline: 2px solid var(--color-pink-500);
+  outline-offset: 2px;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Prevent horizontal overflow on mobile */
+* {
+  box-sizing: border-box;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+}
+
+/* RTL Support */
+[dir="rtl"] {
+  direction: rtl;
+}
+
+[dir="rtl"] .container-site {
+  text-align: right;
+}
+
+[dir="rtl"] select,
+[dir="rtl"] select.theme-select {
+  background-position: left 12px center;
+  padding: 0.5rem 1rem 0.5rem 2.5rem;
+}
+
+[dir="rtl"] .ml-auto {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+[dir="rtl"] .space-x-2 > * + * {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .space-x-4 > * + * {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .space-x-6 > * + * {
+  --tw-space-x-reverse: 1;
+}
