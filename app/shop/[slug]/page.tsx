@@ -8,12 +8,12 @@ import { ProductDetail } from "./ProductDetail";
 
 /**
  * Generate static params for all products
+ * Note: Disabled during build to avoid DB connection issues
  */
 export async function generateStaticParams() {
-  const products = await getAllProducts();
-  return products.map((product) => ({
-    slug: product.slug,
-  }));
+  // Return empty array - pages will be generated on-demand
+  // Alternatively, you could return a few popular product slugs here
+  return [];
 }
 
 /**

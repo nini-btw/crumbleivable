@@ -81,15 +81,46 @@ export default function CartPage() {
     setIsSubmitting(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+      // Create order via API
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: {
+            fullName: data.fullName,
+            phone: data.phone,
+            address: data.address,
+          },
+          notes: {
+            cookingNote: cookingNote || undefined,
+            giftNote: giftNote || undefined,
+          },
+          items: items.map((item) => ({
+            product: item.product,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create order");
+      }
+
       setOrderComplete(true);
-      setOrderId("order-" + Date.now());
+      setOrderId(result.data.id);
       dispatch(clearCart());
-    } catch (error) {
       dispatch(
         addToast({
-          message: "An error occurred. Please try again.",
+          message: "Order placed successfully!",
+          type: "success",
+        })
+      );
+    } catch (error: any) {
+      dispatch(
+        addToast({
+          message: error.message || "An error occurred. Please try again.",
           type: "error",
         })
       );

@@ -7,11 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest"
+    "test": "vitest",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:test": "tsx scripts/test-connection.ts",
+    "db:migrate": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:fix-auth": "tsx scripts/fix-auth.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^4.0.0",
     "@reduxjs/toolkit": "^2.6.0",
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.0",
     "bcryptjs": "^3.0.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
@@ -23,6 +30,8 @@
     "lucide-react": "^0.487.0",
     "next": "16.2.3",
     "next-auth": "^5.0.0-beta.25",
+    "next-swagger-doc": "^0.4.1",
+    "nextjs-cors": "^2.2.1",
     "postgres": "^3.4.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -30,6 +39,7 @@
     "react-i18next": "^17.0.2",
     "react-redux": "^9.2.0",
     "sharp": "^0.34.0",
+    "swagger-ui-react": "^5.32.2",
     "tailwind-merge": "^3.2.0",
     "uuid": "^11.1.0",
     "zod": "^3.24.0"
@@ -42,12 +52,14 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@types/uuid": "^10.0.0",
+    "dotenv": "^17.4.1",
     "drizzle-kit": "^0.31.0",
     "eslint": "^9.24.0",
     "eslint-config-next": "16.2.3",
     "prettier": "^3.5.0",
     "prettier-plugin-tailwindcss": "^0.6.11",
     "tailwindcss": "^4.2.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.0"
   }
 }

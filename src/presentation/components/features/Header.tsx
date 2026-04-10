@@ -17,11 +17,17 @@ export const Header: React.FC = () => {
   const cartCount = useSelector(selectTotalItemCount);
   const [scrolled, setScrolled] = React.useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  // Prevent hydration mismatch
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const navLinks = [
-    { href: "/shop", label: t("nav.shop") },
-    { href: "/build", label: t("nav.build") },
-    { href: "/vote", label: t("nav.vote") },
+    { href: "/shop", label: mounted ? t("nav.shop") : "Shop" },
+    { href: "/build", label: mounted ? t("nav.build") : "Build" },
+    { href: "/vote", label: mounted ? t("nav.vote") : "Vote" },
   ];
 
   React.useEffect(() => {

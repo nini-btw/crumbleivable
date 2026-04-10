@@ -1,18 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { CookieIcon, AlertCircleIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import { Input } from "@/presentation/components/ui/Input";
 import { fadeInUp } from "@/presentation/lib/animations";
+import { loginAdmin } from "../actions";
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter();
-  const [email, setEmail] = React.useState("admin@example.com");
-  const [password, setPassword] = React.useState("password");
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/admin";
+
+  const [email, setEmail] = React.useState("admin@crumbleivable.com");
+  const [password, setPassword] = React.useState("");
   const [error, setError] = React.useState("");
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -22,18 +26,13 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        callbackUrl: "/admin",
-      });
+      const result = await loginAdmin(email, password);
 
-      if (result?.error) {
-        setError("Invalid email or password");
-      } else {
-        router.push("/admin");
+      if (result.success) {
+        router.push(callbackUrl);
         router.refresh();
+      } else {
+        setError(result.error || "Invalid email or password");
       }
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -43,7 +42,7 @@ export default function AdminLoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-brown-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#2C1810] flex items-center justify-center p-4">
       <motion.div
         variants={fadeInUp}
         initial="initial"
@@ -51,18 +50,15 @@ export default function AdminLoginPage() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-pink-500 rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#F4538A] rounded-2xl mb-4">
             <CookieIcon className="w-8 h-8 text-white" />
           </div>
           <h1 className="font-display text-3xl text-white">crumbleivable!</h1>
           <p className="text-white/70 mt-2">Admin Dashboard</p>
-          <p className="text-pink-400 text-sm mt-2">
-            (Mock: any email/password works)
-          </p>
         </div>
 
         <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(44,24,16,0.16)]">
-          <h2 className="font-bold text-xl text-brown-900 mb-6">
+          <h2 className="font-bold text-xl text-[#2C1810] mb-6">
             Sign In
           </h2>
 
@@ -100,6 +96,10 @@ export default function AdminLoginPage() {
               Sign In
             </Button>
           </form>
+
+          <p className="text-center text-sm text-[#A07850] mt-4">
+            Default: admin@crumbleivable.com / admin123
+          </p>
         </div>
 
         <p className="text-center text-white/50 text-sm mt-8">
@@ -107,5 +107,17 @@ export default function AdminLoginPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#2C1810] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

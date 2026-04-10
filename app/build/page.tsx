@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,37 +13,36 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { openCart, addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
-import { mockCookies } from "@/infrastructure/db/mock-data";
-import type { Product } from "@/domain/entities/product";
+import type { Product, CookiePiece } from "@/domain/entities/product";
 
 const steps = ["Choose Cookies", "Review Box", "Add to Cart"];
 
-const getCookieImage = (slug: string): string => {
-  const imageMap: Record<string, string> = {
-    chocoShips: "/images/chocoShips.png",
-    mm: "/images/mm.png",
-    pistash: "/images/pistash.png",
-    viola: "/images/viola.png",
-    peanut: "/images/peanut.png",
-    ben10: "/images/ben10.png",
-    lotus: "/images/lotus.png",
-    strawbery: "/images/strawbery.png",
-
-    // boxes
-    bueno: "/images/bueno.png",
-    kinder: "/images/kinder.png",
-    tiramisu: "/images/tiramisu.png",
-  };
-  return imageMap[slug] || "/images/bueno.png";
-};
-
 export default function BuildPage() {
   const dispatch = useDispatch();
-
-  const [currentStep, setCurrentStep] = React.useState(0);
-  const [selectedCookies, setSelectedCookies] = React.useState<
+  const [cookies, setCookies] = useState<CookiePiece[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [selectedCookies, setSelectedCookies] = useState<
     { cookie: Product; quantity: number }[]
   >([]);
+
+  // Fetch cookies from API
+  useEffect(() => {
+    async function fetchCookies() {
+      try {
+        const response = await fetch("/api/products/cookies");
+        const result = await response.json();
+        if (result.success) {
+          setCookies(result.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch cookies:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCookies();
+  }, []);
 
   const toggleCookie = (cookie: Product) => {
     const existing = selectedCookies.find((c) => c.cookie.id === cookie.id);
@@ -73,13 +73,21 @@ export default function BuildPage() {
 
   const canProceed = selectedCookies.length > 0 && totalCookies >= 3;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#A07850]">Loading cookies...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <section className="bg-sand/30 py-12">
+      <section className="bg-[#F0E6D6]/30 py-12">
         <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-8 lg:px-12">
-          <h1 className="font-display text-brown-900 mb-4 text-4xl sm:text-5xl">Build Your Box</h1>
-          <p className="text-brown-400 max-w-xl">
+          <h1 className="font-display text-[#2C1810] mb-4 text-4xl sm:text-5xl">Build Your Box</h1>
+          <p className="text-[#A07850] max-w-xl">
             Create your perfect box by selecting 3 or more cookies. Mix and match to your
             heart&apos;s content!
           </p>
@@ -87,7 +95,7 @@ export default function BuildPage() {
       </section>
 
       {/* Step Indicator */}
-      <div className="border-brown-100 border-b bg-white py-6">
+      <div className="border-[#E8D5C0] border-b bg-white py-6">
         <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-8 lg:px-12">
           <StepIndicator steps={steps} currentStep={currentStep} />
         </div>
@@ -105,18 +113,18 @@ export default function BuildPage() {
                 animate="animate"
                 exit={{ opacity: 0, x: -20 }}
               >
-                <div className="mb-8 rounded-2xl border border-pink-100 bg-pink-50 p-4">
+                <div className="mb-8 rounded-2xl border border-[#F4538A]/20 bg-[#FFF0F5] p-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="text-brown-700 font-medium">
+                    <span className="text-[#5C3D2E] font-medium">
                       {totalCookies} / 3 cookies selected
                     </span>
-                    <span className="font-bold text-pink-500">
+                    <span className="font-bold text-[#F4538A]">
                       {totalCookies >= 3 ? "✓ Ready!" : `${3 - totalCookies} more needed`}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-pink-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-[#F4538A]/10">
                     <motion.div
-                      className="h-full rounded-full bg-pink-500"
+                      className="h-full rounded-full bg-[#F4538A]"
                       initial={{ width: 0 }}
                       animate={{ width: `${Math.min((totalCookies / 3) * 100, 100)}%` }}
                       transition={{ duration: 0.3 }}
@@ -125,7 +133,7 @@ export default function BuildPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-                  {mockCookies.map((cookie) => {
+                  {cookies.map((cookie) => {
                     const selected = selectedCookies.some((c) => c.cookie.id === cookie.id);
                     return (
                       <button
@@ -133,27 +141,27 @@ export default function BuildPage() {
                         onClick={() => toggleCookie(cookie)}
                         className={`group relative flex cursor-pointer flex-col items-center gap-3 rounded-2xl border-2 p-4 transition-all duration-200 ${
                           selected
-                            ? "border-pink-500 bg-pink-50 shadow-[0_0_0_3px_rgba(244,83,138,0.15)]"
-                            : "border-brown-100 bg-white hover:border-pink-200"
+                            ? "border-[#F4538A] bg-[#FFF0F5] shadow-[0_0_0_3px_rgba(244,83,138,0.15)]"
+                            : "border-[#E8D5C0] bg-white hover:border-[#F4538A]/30"
                         }`}
                       >
-                        <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-pink-50 sm:h-24 sm:w-24">
+                        <div className="relative h-20 w-20 overflow-hidden rounded-xl bg-[#FFF0F5] sm:h-24 sm:w-24">
                           <Image
-                            src={getCookieImage(cookie.slug)}
+                            src={cookie.images[0] || "/images/box1.png"}
                             alt={cookie.name}
                             fill
                             className="object-cover"
                           />
                           {selected && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-pink-500/40">
+                            <div className="absolute inset-0 flex items-center justify-center bg-[#F4538A]/40">
                               <CheckIcon className="h-8 w-8 text-white" />
                             </div>
                           )}
                         </div>
-                        <span className="text-brown-900 line-clamp-2 text-center text-xs leading-tight font-bold sm:text-sm">
+                        <span className="text-[#2C1810] line-clamp-2 text-center text-xs leading-tight font-bold sm:text-sm">
                           {cookie.name}
                         </span>
-                        <span className="text-brown-400 text-xs tabular-nums">
+                        <span className="text-[#A07850] text-xs tabular-nums">
                           {formatPrice(cookie.price)}
                         </span>
                       </button>
@@ -165,7 +173,7 @@ export default function BuildPage() {
                   <Button
                     onClick={() => setCurrentStep(1)}
                     disabled={!canProceed}
-                    className="group cursor-pointer"
+                    className="group cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
                   >
                     Review Box
                     <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -183,7 +191,7 @@ export default function BuildPage() {
                 exit={{ opacity: 0, x: -20 }}
               >
                 <div className="mx-auto max-w-2xl">
-                  <h2 className="font-display text-brown-900 mb-6 text-center text-2xl">
+                  <h2 className="font-display text-[#2C1810] mb-6 text-center text-2xl">
                     Your Custom Box
                   </h2>
 
@@ -191,21 +199,21 @@ export default function BuildPage() {
                     {selectedCookies.map(({ cookie, quantity }) => (
                       <div
                         key={cookie.id}
-                        className="bg-sand/30 flex items-center gap-4 rounded-xl p-3"
+                        className="bg-[#F0E6D6]/30 flex items-center gap-4 rounded-xl p-3"
                       >
-                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-pink-50">
+                        <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-[#FFF0F5]">
                           <Image
-                            src={getCookieImage(cookie.slug)}
+                            src={cookie.images[0] || "/images/box1.png"}
                             alt={cookie.name}
                             fill
                             className="object-cover"
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <h4 className="text-brown-900 truncate text-sm font-bold">
+                          <h4 className="text-[#2C1810] truncate text-sm font-bold">
                             {cookie.name}
                           </h4>
-                          <p className="text-brown-400 text-xs tabular-nums">
+                          <p className="text-[#A07850] text-xs tabular-nums">
                             {formatPrice(cookie.price)}
                           </p>
                         </div>
@@ -216,10 +224,10 @@ export default function BuildPage() {
                       </div>
                     ))}
 
-                    <div className="border-brown-100 border-t pt-4">
+                    <div className="border-[#E8D5C0] border-t pt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-brown-700">{totalCookies} cookies</span>
-                        <span className="text-brown-900 text-2xl font-extrabold tabular-nums">
+                        <span className="text-[#5C3D2E]">{totalCookies} cookies</span>
+                        <span className="text-[#2C1810] text-2xl font-extrabold tabular-nums">
                           {formatPrice(totalPrice)}
                         </span>
                       </div>
@@ -228,14 +236,17 @@ export default function BuildPage() {
 
                   <div className="mt-8 flex justify-between">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       onClick={() => setCurrentStep(0)}
                       className="cursor-pointer"
                     >
                       <ChevronLeftIcon className="mr-2 h-4 w-4" />
                       Back
                     </Button>
-                    <Button onClick={() => setCurrentStep(2)} className="cursor-pointer">
+                    <Button 
+                      onClick={() => setCurrentStep(2)} 
+                      className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
+                    >
                       Continue
                       <ChevronRightIcon className="ml-2 h-4 w-4" />
                     </Button>
@@ -253,19 +264,24 @@ export default function BuildPage() {
                 exit={{ opacity: 0, x: -20 }}
                 className="mx-auto max-w-lg text-center"
               >
-                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-pink-50">
-                  <ShoppingBagIcon className="h-12 w-12 text-pink-500" />
+                <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-[#FFF0F5]">
+                  <ShoppingBagIcon className="h-12 w-12 text-[#F4538A]" />
                 </div>
 
-                <h2 className="font-display text-brown-900 mb-4 text-3xl">Ready to Order?</h2>
+                <h2 className="font-display text-[#2C1810] mb-4 text-3xl">Ready to Order?</h2>
 
-                <p className="text-brown-700 mb-2">Your custom box with {totalCookies} cookies</p>
-                <p className="mb-8 text-2xl font-extrabold text-pink-500 tabular-nums">
+                <p className="text-[#5C3D2E] mb-2">Your custom box with {totalCookies} cookies</p>
+                <p className="mb-8 text-2xl font-extrabold text-[#F4538A] tabular-nums">
                   {formatPrice(totalPrice)}
                 </p>
 
                 <div className="space-y-3">
-                  <Button size="lg" fullWidth onClick={handleAddToCart} className="cursor-pointer">
+                  <Button 
+                    size="lg" 
+                    fullWidth 
+                    onClick={handleAddToCart} 
+                    className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
+                  >
                     Add to Cart
                   </Button>
                   <Button

@@ -9,9 +9,10 @@ export interface CountdownTimerProps {
   onComplete?: () => void;
 }
 
-const TimeUnit: React.FC<{ value: number; label: string }> = ({
+const TimeUnit: React.FC<{ value: number; label: string; suppressHydration?: boolean }> = ({
   value,
   label,
+  suppressHydration = true,
 }) => (
   <div className="text-center">
     <div className="bg-[#2C1810] text-white font-display text-2xl sm:text-4xl lg:text-5xl w-14 sm:w-20 lg:w-24 h-14 sm:h-20 lg:h-24 rounded-2xl flex items-center justify-center tabular-nums shadow-lg">
@@ -22,6 +23,7 @@ const TimeUnit: React.FC<{ value: number; label: string }> = ({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 20, opacity: 0 }}
           transition={{ duration: 0.3 }}
+          suppressHydrationWarning={suppressHydration}
         >
           {String(value).padStart(2, "0")}
         </motion.span>

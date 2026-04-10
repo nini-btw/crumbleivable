@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { ArrowRightIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 
@@ -12,7 +12,7 @@ const PANELS = [
     src: "/images/chocoShips.png",
     headline: "Classic.",
     sub: "Chocolate Chip",
-    bg: "#1a0a00",
+    bg: "#0d0500",
     text: "#f7e4c0",
     accent: "#c9a84c",
   },
@@ -20,15 +20,15 @@ const PANELS = [
     src: "/images/viola.png",
     headline: "Dreamy.",
     sub: "Red Velvet",
-    bg: "#3b1a2c",
+    bg: "#1a0612",
     text: "#fde8f0",
     accent: "#F4538A",
   },
   {
     src: "/images/pistash.png",
     headline: "Nutty.",
-    sub: "White Chocolate Macadamia",
-    bg: "#0f1f0e",
+    sub: "White Choc Macadamia",
+    bg: "#060f05",
     text: "#e8f5e0",
     accent: "#7ab648",
   },
@@ -36,256 +36,346 @@ const PANELS = [
     src: "/images/peanut.png",
     headline: "Irresistible.",
     sub: "Peanut Butter",
-    bg: "#1e1000",
+    bg: "#0d0700",
     text: "#faf0dc",
     accent: "#e0872a",
   },
 ];
 
 const N = PANELS.length;
+const CTA_EXTRA = 1.5;
+const TOTAL = N + CTA_EXTRA;
+const CTA_START = N / TOTAL;
+const CTA_FULL = (N + 0.4) / TOTAL;
 
 export default function HeroSection() {
   const containerRef = React.useRef<HTMLDivElement>(null);
-  
-  // Use Framer Motion's useScroll for reliable scroll tracking
+
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"]
-  });
-  
-  // Smooth the progress
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 100,
-    damping: 30,
-    restDelta: 0.001
+    offset: ["start start", "end end"],
   });
 
-  // Calculate which panel should be active based on scroll
-  // 0-0.25 = panel 0, 0.25-0.5 = panel 1, etc.
-  const currentPanel = useTransform(smoothProgress, [0, 1], [0, N - 1]);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 80,
+    damping: 25,
+    restDelta: 0.001,
+  });
 
   return (
-    <div 
-      ref={containerRef} 
-      className="relative bg-[#1a0a00]"
-      style={{ height: `${N * 100}vh` }}
-    >
-      {/* Sticky container */}
+    <div ref={containerRef} id="hero-section" className="relative" style={{ height: `${TOTAL * 100}vh` }}>
       <div className="sticky top-0 h-screen w-full overflow-hidden">
         {PANELS.map((panel, index) => (
-          <Panel 
-            key={panel.src} 
-            panel={panel} 
-            index={index} 
-            progress={smoothProgress}
-            totalPanels={N}
-          />
+          <Panel key={panel.src} panel={panel} index={index} progress={smoothProgress} />
         ))}
-        
-        {/* CTA Overlay */}
         <CTAOverlay progress={smoothProgress} />
-        
-        {/* Scroll Hint */}
         <ScrollHint progress={smoothProgress} />
+        <PanelCounter progress={smoothProgress} />
       </div>
     </div>
   );
 }
 
-function Panel({ 
-  panel, 
-  index, 
+/* ─────────────────────────── COOKIE PANEL ─────────────────────────── */
+function Panel({
+  panel,
+  index,
   progress,
-  totalPanels 
-}: { 
-  panel: typeof PANELS[0]; 
-  index: number; 
+}: {
+  panel: (typeof PANELS)[0];
+  index: number;
   progress: any;
-  totalPanels: number;
 }) {
-  // Each panel takes 1/totalPanels of the scroll
-  const start = index / totalPanels;
-  const end = (index + 1) / totalPanels;
-  
-  // Panel 0 is always visible at start, others wipe in
+  const start = index / TOTAL;
+  const end = (index + 1) / TOTAL;
+
   const clipPath = useTransform(
     progress,
-    [start, end],
-    index === 0 
+    [start, Math.min(start + 0.06, end)],
+    index === 0
       ? ["inset(0% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
       : ["inset(100% 0% 0% 0%)", "inset(0% 0% 0% 0%)"]
   );
-  
-  // For panel 0, fade out as we scroll to next
-  const opacity = useTransform(
+
+  const imgY = useTransform(progress, [start, end], ["0%", "-18%"]);
+  const imgScale = useTransform(progress, [start, end], [1.08, 1.22]);
+
+  const textY = useTransform(
     progress,
-    [start, start + 0.2, end - 0.1, end],
-    index === 0 ? [1, 1, 1, 0] : [0, 1, 1, 1]
+    [start, start + 0.06, end - 0.05, end],
+    ["60px", "0px", "-20px", "-60px"]
   );
-  
-  // Parallax effect for image
-  const imgY = useTransform(
-    progress,
-    [start, end],
-    ["0%", "-10%"]
-  );
-  
-  const imgScale = useTransform(
-    progress,
-    [start, end],
-    [1, 1.1]
-  );
+  const textOpacity = useTransform(progress, [start, start + 0.06, end - 0.06, end], [0, 1, 1, 0]);
+
+  const panelOpacity = index === 0 ? useTransform(progress, [end - 0.04, end], [1, 0]) : undefined;
 
   return (
-    <motion.div 
+    <motion.div
       className="absolute inset-0"
-      style={{ 
-        clipPath: index === 0 ? undefined : clipPath,
-        opacity: index === 0 ? opacity : undefined,
-        zIndex: index 
-      }}
+      style={{ clipPath: index === 0 ? undefined : clipPath, opacity: panelOpacity, zIndex: index }}
     >
       <div
-        className="relative flex h-full w-full items-center justify-center overflow-hidden"
+        className="relative flex h-full w-full items-end overflow-hidden"
         style={{ background: panel.bg }}
       >
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/50" />
-        
-        {/* Glow effect */}
-        <div 
-          className="absolute inset-0 opacity-20"
+        <motion.div className="absolute inset-0" style={{ y: imgY, scale: imgScale }}>
+          <Image
+            src={panel.src}
+            alt={panel.sub}
+            fill
+            className="object-cover object-center"
+            priority={index < 2}
+            sizes="100vw"
+          />
+        </motion.div>
+        <div
+          className="absolute inset-0"
           style={{
-            background: `radial-gradient(circle at center, ${panel.accent} 0%, transparent 60%)`,
+            background: `linear-gradient(to top, ${panel.bg}f0 0%, ${panel.bg}b0 28%, ${panel.bg}40 55%, transparent 100%)`,
           }}
         />
-        
-        {/* Cookie image with parallax */}
-        <motion.div 
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ y: imgY, scale: imgScale }}
-        >
-          <div className="relative w-[50vw] h-[50vh] max-w-[500px] max-h-[500px]">
-            <Image 
-              src={panel.src} 
-              alt={panel.sub} 
-              fill 
-              className="object-contain drop-shadow-2xl"
-              priority={index < 2}
-            />
-          </div>
-        </motion.div>
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            background: `radial-gradient(ellipse at 50% 110%, ${panel.accent}88 0%, transparent 65%)`,
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_35%,rgba(0,0,0,0.75)_100%)]" />
 
-        {/* Text content */}
-        <div className="pointer-events-none relative z-10 px-8 text-center select-none">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="mb-4 text-sm font-light tracking-[0.4em] uppercase"
+        <motion.div
+          className="relative z-10 w-full px-8 pb-20 sm:px-14 sm:pb-24 lg:px-20 lg:pb-28"
+          style={{ y: textY, opacity: textOpacity }}
+        >
+          <p
+            className="mb-3 text-[10px] font-semibold tracking-[0.45em] uppercase sm:text-xs"
             style={{ color: panel.accent }}
           >
             {panel.sub}
-          </motion.p>
-          <motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="leading-none font-black tracking-tighter"
-            style={{ 
-              color: panel.text, 
-              fontSize: "clamp(2.5rem,10vw,8rem)",
-              textShadow: "0 4px 30px rgba(0,0,0,0.5)"
+          </p>
+          <h2
+            className="leading-[0.88] font-black tracking-tighter"
+            style={{
+              color: panel.text,
+              fontSize: "clamp(4.5rem, 16vw, 14rem)",
+              textShadow: `0 8px 60px ${panel.bg}cc, 0 2px 8px rgba(0,0,0,0.8)`,
             }}
           >
             {panel.headline}
-          </motion.h2>
-        </div>
-
-        {/* Panel number */}
-        <span
-          className="absolute right-6 bottom-6 text-xs font-light tracking-[0.3em] opacity-50 sm:right-10 sm:bottom-10"
-          style={{ color: panel.text }}
-        >
-          0{index + 1} / 0{totalPanels}
-        </span>
-        
-        {/* Vignette */}
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.6)_100%)]" />
+          </h2>
+        </motion.div>
       </div>
     </motion.div>
   );
 }
 
+/* ─────────────────────────── CTA OVERLAY ─────────────────────────── */
 function CTAOverlay({ progress }: { progress: any }) {
-  // Show CTA in the last 15% of scroll
-  const opacity = useTransform(progress, [0.82, 0.92], [0, 1]);
-  const y = useTransform(progress, [0.82, 0.92], [50, 0]);
-  const pointerEvents = useTransform(opacity, (v: number) => v > 0.5 ? "auto" : "none");
+  const opacity = useTransform(progress, [CTA_START, CTA_FULL], [0, 1]);
+  const pointerEvents = useTransform(opacity, (v: number) => (v > 0.4 ? "auto" : "none"));
+
+  const leftY = useTransform(progress, [CTA_START, CTA_FULL], [70, 0]);
+  const rightScale = useTransform(progress, [CTA_START, CTA_FULL], [0.88, 1]);
+  const rightOpacity = useTransform(progress, [CTA_START + 0.04, CTA_FULL], [0, 1]);
+  const rightY = useTransform(progress, [CTA_START, CTA_FULL], [40, 0]);
 
   return (
-    <motion.div
-      className="absolute inset-0 z-50 flex items-center justify-center"
-      style={{ opacity, pointerEvents }}
-    >
-      <motion.div
-        className="absolute inset-0 bg-black/70 backdrop-blur-md"
-        style={{ opacity }}
+    <motion.div className="absolute inset-0 z-50" style={{ opacity, pointerEvents }}>
+      {/* ── BACKGROUND ── */}
+      <div className="absolute inset-0 bg-[#FDF6EE]" />
+      {/* Pink blob top-right */}
+      <div
+        className="absolute -top-40 -right-40 h-175 w-175 rounded-full opacity-20"
+        style={{ background: "radial-gradient(circle, #F4538A 0%, #FFD6E7 45%, transparent 70%)" }}
       />
-      <motion.div
-        style={{ y }}
-        className="relative z-10 flex flex-col items-center gap-6 px-8 text-center max-w-2xl"
-      >
-        <p className="text-xs font-light tracking-[0.4em] text-white/50 uppercase">
-          Now baking in Wahran
-        </p>
-        <h1 className="text-4xl leading-[0.95] font-black tracking-tighter text-white sm:text-5xl lg:text-6xl">
-          Every bite,<br />
-          <span className="text-[#F4538A] italic">a story.</span>
-        </h1>
-        <p className="max-w-md text-base leading-relaxed text-white/60">
-          Chewy, gooey American-style cookies delivered fresh to your door. 
-          No account needed — just pick your favorites.
-        </p>
-        <div className="flex flex-col gap-4 pt-4 sm:flex-row">
-          <Link href="/shop">
-            <Button
-              size="lg"
-              className="group cursor-pointer rounded-full bg-white px-8 font-semibold text-[#1a0a00] shadow-xl transition-all duration-300 hover:bg-[#F4538A] hover:text-white hover:shadow-2xl hover:scale-105"
+      {/* Sand blob bottom-left */}
+      <div
+        className="absolute -bottom-24 -left-24 h-112.5 w-112.5 rounded-full opacity-35"
+        style={{ background: "radial-gradient(circle, #F0E6D6 0%, transparent 70%)" }}
+      />
+      {/* Dot grid */}
+      <div
+        className="absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #2C1810 1px, transparent 1px)",
+          backgroundSize: "28px 28px",
+        }}
+      />
+
+      {/* ── SPLIT LAYOUT ── */}
+      <div className="relative z-10 flex h-full w-full flex-col lg:flex-row">
+        {/* LEFT: Copy + CTA */}
+        <motion.div
+          style={{ y: leftY }}
+          className="flex flex-1 flex-col justify-end px-8 pt-24 pb-16 sm:px-14 lg:justify-center lg:px-20 lg:pt-0 lg:pb-0"
+        >
+          <p
+            className="mb-5 text-[10px] font-bold tracking-[0.5em] uppercase"
+            style={{ color: "#F4538A" }}
+          >
+            Now baking in Wahran
+          </p>
+
+          <h1
+            className="mb-6 leading-[0.9] font-black tracking-tighter"
+            style={{ fontSize: "clamp(3rem, 8vw, 7rem)", color: "#2C1810" }}
+          >
+            Every bite, <span style={{ color: "#F4538A", fontStyle: "italic" }}>a story.</span>
+          </h1>
+
+          <p
+            className="mb-10 max-w-sm text-base leading-relaxed font-light"
+            style={{ color: "#5C3D2E" }}
+          >
+            Chewy, gooey American-style cookies delivered fresh to your door. No account needed —
+            just pick your favorites,{" "}
+            <span className="font-semibold italic" style={{ color: "#F4538A" }}>
+              and we will bake it happen.
+            </span>
+          </p>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link href="/shop">
+              <Button
+                size="lg"
+                className="group cursor-pointer rounded-full px-8 font-bold text-white transition-all duration-200 hover:scale-105"
+                style={{ background: "#F4538A", boxShadow: "0 8px 24px rgba(244,83,138,0.4)" }}
+              >
+                Shop Now{" "}
+                <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
+            <Link href="/build">
+              <Button
+                variant="ghost"
+                size="lg"
+                className="cursor-pointer rounded-full border-2 px-8 font-bold transition-all duration-200 hover:scale-105"
+                style={{ borderColor: "#F4538A", color: "#F4538A", background: "transparent" }}
+              >
+                Build Your Box
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        {/* Divider */}
+        <div className="my-16 hidden w-px shrink-0 lg:block" style={{ background: "#E8D5C0" }} />
+
+        {/* RIGHT: Glamour box shot */}
+        <motion.div
+          style={{ scale: rightScale, opacity: rightOpacity, y: rightY }}
+          className="hidden w-[48%] shrink-0 flex-col items-center justify-center px-10 py-8 lg:flex"
+        >
+          {/* Main box image — large, centred, slightly tilted */}
+          <div className="relative w-full">
+            {/* Glow behind the box */}
+            <div
+              className="absolute inset-0 -z-10 scale-90 rounded-full opacity-40 blur-3xl"
+              style={{
+                background: "radial-gradient(ellipse, #F4538A 0%, #FFD6E7 50%, transparent 75%)",
+              }}
+            />
+
+            {/* Tilted box image */}
+            <motion.div
+              animate={{ rotate: [-1.5, 1.5, -1.5], y: [0, -8, 0] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="relative mx-auto w-full max-w-130"
+              style={{
+                filter:
+                  "drop-shadow(0 32px 48px rgba(244,83,138,0.25)) drop-shadow(0 8px 16px rgba(44,24,16,0.15))",
+              }}
             >
-              Shop Now <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </Link>
-          <Link href="/build">
-            <Button
-              variant="ghost"
-              size="lg"
-              className="cursor-pointer rounded-full border-2 border-white/30 px-8 text-white backdrop-blur-sm transition-all duration-300 hover:border-white hover:bg-white/10"
+              <Image
+                src="/images/box1.png"
+                alt="Crumbleivable! pink cookie box — Bake it happen"
+                width={520}
+                height={360}
+                className="w-full object-contain"
+                sizes="(max-width: 1024px) 0vw, 48vw"
+                priority
+              />
+            </motion.div>
+
+            {/* Floating cookie accent — top right */}
+            <motion.div
+              animate={{ rotate: [0, 12, 0], y: [0, -10, 0] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute top-10 -right-6 h-20 w-20 overflow-hidden rounded-full shadow-xl"
+              style={{
+                border: "3px solid #FFD6E7",
+                background: "#FFF0F5",
+              }}
             >
-              Build Your Box
-            </Button>
-          </Link>
-        </div>
-      </motion.div>
+              <Image
+                src="/images/chocoShips.png"
+                alt=""
+                fill
+                className="scale-125 object-cover"
+                sizes="80px"
+              />
+            </motion.div>
+
+            {/* Floating cookie accent — bottom left */}
+            <motion.div
+              animate={{ rotate: [0, -10, 0], y: [0, 8, 0] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
+              className="absolute bottom-6 -left-4 h-16 w-16 overflow-hidden rounded-full shadow-lg"
+              style={{
+                border: "3px solid #FFD6E7",
+                background: "#FFF0F5",
+              }}
+            >
+              <Image
+                src="/images/viola.png"
+                alt=""
+                fill
+                className="scale-125 object-cover"
+                sizes="64px"
+              />
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
 
+/* ─────────────────────────── PANEL COUNTER ─────────────────────────── */
+function PanelCounter({ progress }: { progress: any }) {
+  const opacity = useTransform(progress, [CTA_START - 0.04, CTA_START], [1, 0]);
+  return (
+    <motion.div
+      style={{ opacity }}
+      className="pointer-events-none absolute right-8 bottom-8 z-50 flex flex-col items-end gap-1.5 sm:right-12 sm:bottom-12"
+    >
+      {PANELS.map((_, i) => {
+        const start = i / TOTAL;
+        const end = (i + 1) / TOTAL;
+        const w = useTransform(
+          progress,
+          [start, start + 0.05, end - 0.05, end],
+          ["12px", "32px", "32px", "12px"]
+        );
+        const o = useTransform(progress, [start, start + 0.05, end - 0.05, end], [0.2, 1, 1, 0.2]);
+        return <motion.div key={i} style={{ width: w, opacity: o }} className="h-px bg-white" />;
+      })}
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────── SCROLL HINT ─────────────────────────── */
 function ScrollHint({ progress }: { progress: any }) {
-  const opacity = useTransform(progress, [0, 0.1], [1, 0]);
-  
+  const opacity = useTransform(progress, [0, 0.06], [1, 0]);
   return (
     <motion.div
       style={{ opacity }}
       className="pointer-events-none absolute bottom-10 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center gap-3"
     >
-      <span className="text-xs font-light tracking-[0.35em] text-white/50 uppercase">
-        Scroll to explore
-      </span>
+      <span className="text-[9px] font-bold tracking-[0.5em] text-white/40 uppercase">Scroll</span>
       <motion.div
-        animate={{ y: [0, 8, 0], opacity: [0.5, 1, 0.5] }}
-        transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-        className="h-10 w-px bg-gradient-to-b from-white/60 to-transparent"
+        animate={{ y: [0, 10, 0], opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+        className="h-12 w-px bg-linear-to-b from-white/70 to-transparent"
       />
     </motion.div>
   );

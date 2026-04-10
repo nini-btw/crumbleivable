@@ -10,7 +10,7 @@ import type { CookiePiece } from "./product";
  */
 export interface WeeklyDrop {
   id: string;
-  productId: string;
+  productId?: string;
   product?: CookiePiece;
   scheduledAt: Date;
   isActive: boolean;

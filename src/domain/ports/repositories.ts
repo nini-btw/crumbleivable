@@ -86,6 +86,11 @@ export interface IOrderRepository {
    * Get recent orders
    */
   getRecent(count: number): Promise<Order[]>;
+
+  /**
+   * Delete order
+   */
+  delete(id: string): Promise<void>;
 }
 
 /**

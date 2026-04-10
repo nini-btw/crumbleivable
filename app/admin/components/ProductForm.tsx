@@ -39,7 +39,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const productData: Partial<Product> = {
@@ -49,7 +49,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
       price: Number(formData.price),
       type: formData.type,
       isActive: formData.isActive,
-      images: [],
+      images: initialData?.images || [],
     };
 
     if (formData.type === "cookie") {
@@ -61,23 +61,46 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
       (productData as Partial<CookieBox>).includedCookies = formData.includedCookies;
     }
 
-    onSubmit?.(productData);
-    
-    if (!onSubmit) {
-      // Default behavior: navigate back
-      router.push("/admin/products");
+    if (onSubmit) {
+      onSubmit(productData);
+      return;
+    }
+
+    // Default behavior: call API
+    try {
+      const url = isEdit && initialData 
+        ? `/api/products/${initialData.id}` 
+        : "/api/products";
+      const method = isEdit ? "PUT" : "POST";
+      
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(productData),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        router.push("/admin/products");
+      } else {
+        alert(result.error || "Failed to save product");
+      }
+    } catch (error) {
+      console.error("Failed to save product:", error);
+      alert("Failed to save product");
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Basic Info */}
-      <div className="bg-white rounded-3xl border border-brown-100 p-6 space-y-6">
-        <h2 className="font-bold text-brown-900 text-lg">Basic Information</h2>
+      <div className="bg-white rounded-3xl border border-[#E8D5C0] p-6 space-y-6">
+        <h2 className="font-bold text-[#2C1810] text-lg">Basic Information</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
               Product Name
             </label>
             <input
@@ -92,7 +115,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
           </div>
           
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
               Slug
             </label>
             <input
@@ -108,7 +131,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
         </div>
 
         <div>
-          <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+          <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
             Description
           </label>
           <textarea
@@ -124,7 +147,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
               Price (DA)
             </label>
             <input
@@ -140,7 +163,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
           </div>
           
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
               Type
             </label>
             <select
@@ -177,12 +200,12 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
 
       {/* Cookie-specific fields */}
       {formData.type === "cookie" && (
-        <div className="bg-white rounded-3xl border border-brown-100 p-6 space-y-6">
-          <h2 className="font-bold text-brown-900 text-lg">Cookie Details</h2>
+        <div className="bg-white rounded-3xl border border-[#E8D5C0] p-6 space-y-6">
+          <h2 className="font-bold text-[#2C1810] text-lg">Cookie Details</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
                 Flavour
               </label>
               <input
@@ -196,7 +219,7 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
             </div>
             
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-brown-400 block mb-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
                 Allergens (comma-separated)
               </label>
               <input

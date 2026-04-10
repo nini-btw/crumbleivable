@@ -1,25 +1,50 @@
 "use client";
 
-import { useState, useMemo, use } from "react";
+import { useState, useMemo, use, useEffect } from "react";
 import Link from "next/link";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import { Button } from "@/presentation/components/ui/Button";
-import { mockProducts } from "@/infrastructure/db/mock-data";
+import type { Product } from "@/domain/entities/product";
 
 export default function ShopPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  // Unwrap the Promise with React.use()
   const searchParamsData = use(searchParams);
   const filter = typeof searchParamsData.filter === "string" ? searchParamsData.filter : "all";
   const initialSort = typeof searchParamsData.sort === "string" ? searchParamsData.sort : "popular";
   
   const [sort, setSort] = useState(initialSort);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch products from API
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/products");
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || "Failed to fetch products");
+        }
+        
+        setProducts(result.data);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchProducts();
+  }, []);
 
   const filteredProducts = useMemo(() => {
-    let result = [...mockProducts];
+    let result = [...products];
     
     if (filter === "cookies") {
       result = result.filter((p) => p.type === "cookie");
@@ -36,7 +61,7 @@ export default function ShopPage({
     }
     
     return result;
-  }, [filter, sort]);
+  }, [products, filter, sort]);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSort = e.target.value;
@@ -45,6 +70,22 @@ export default function ShopPage({
     url.searchParams.set("sort", newSort);
     window.history.pushState({}, "", url);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-[#A07850]">Loading products...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">

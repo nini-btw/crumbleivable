@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ArrowRightIcon } from "lucide-react";
@@ -5,12 +8,29 @@ import { Button } from "@/presentation/components/ui/Button";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import HeroSection from "./HeroSection";
 import CountdownSection from "./CountdownSection";
-import { mockProducts } from "@/infrastructure/db/mock-data";
-
-export const revalidate = 300;
+import type { Product } from "@/domain/entities/product";
 
 export default function HomePage() {
-  const featuredProducts = mockProducts.slice(0, 4);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const response = await fetch("/api/products");
+        const result = await response.json();
+        if (result.success) {
+          // Get first 4 active products
+          setProducts(result.data.filter((p: Product) => p.isActive).slice(0, 4));
+        }
+      } catch (error) {
+        console.error("Failed to fetch products:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
 
   return (
     <>
@@ -40,11 +60,19 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {featuredProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-12 text-[#A07850]">Loading products...</div>
+          ) : products.length > 0 ? (
+            <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((product, index) => (
+                <ProductCard key={product.id} product={product} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-[#A07850]">
+              No products available. Check back soon!
+            </div>
+          )}
         </div>
       </section>
 
