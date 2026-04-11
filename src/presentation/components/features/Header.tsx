@@ -9,7 +9,7 @@ import { toggleCart } from "@/presentation/store/ui/ui.slice";
 import { selectTotalItemCount } from "@/presentation/store/cart/cart.slice";
 import { cn } from "@/presentation/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { useTranslation } from "react-i18next";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 export const Header: React.FC = () => {
   const { t } = useTranslation();
@@ -25,9 +25,9 @@ export const Header: React.FC = () => {
   }, []);
 
   const navLinks = [
-    { href: "/shop", label: mounted ? t("nav.shop") : "Shop" },
-    { href: "/build", label: mounted ? t("nav.build") : "Build" },
-    { href: "/vote", label: mounted ? t("nav.vote") : "Vote" },
+    { href: "/shop", labelKey: "nav.shop" },
+    { href: "/build", labelKey: "nav.build" },
+    { href: "/vote", labelKey: "nav.vote" },
   ];
 
   React.useEffect(() => {
@@ -46,10 +46,10 @@ export const Header: React.FC = () => {
           scrolled && "shadow-[0_2px_20px_rgba(44,24,16,0.08)]"
         )}
       >
-        <nav className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1400px] flex items-center justify-between h-16 sm:h-[72px]">
-          <Link href="/" className="flex items-center gap-2 group cursor-pointer">
-            <CookieIcon className="w-8 h-8 text-[#F4538A] group-hover:rotate-12 transition-transform duration-300" />
-            <span className="font-display text-2xl text-[#2C1810] leading-none">
+        <nav className="mx-auto w-full px-3 sm:px-8 lg:px-12 max-w-[1400px] flex items-center justify-between h-16 sm:h-[72px]">
+          <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group cursor-pointer min-w-0">
+            <CookieIcon className="w-7 h-7 sm:w-8 sm:h-8 text-[#F4538A] group-hover:rotate-12 transition-transform duration-300 flex-shrink-0" />
+            <span className="font-display text-lg sm:text-2xl text-[#2C1810] leading-none truncate">
               crumbleivable!
             </span>
           </Link>
@@ -61,18 +61,18 @@ export const Header: React.FC = () => {
                   href={link.href}
                   className="text-[#5C3D2E] hover:text-[#F4538A] font-semibold text-sm transition-colors duration-150 relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-[#F4538A] hover:after:w-full after:transition-all after:duration-300 cursor-pointer"
                 >
-                  {link.label}
+                  {mounted ? t(link.labelKey) : link.labelKey}
                 </Link>
               </li>
             ))}
           </ul>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
             <LanguageSwitcher />
             
             <button
               onClick={() => dispatch(toggleCart())}
-              className="relative p-2.5 rounded-full hover:bg-[#FFF0F5] transition-colors cursor-pointer"
+              className="relative p-2 sm:p-2.5 rounded-full hover:bg-[#FFF0F5] transition-colors cursor-pointer"
               aria-label="Open cart"
             >
               <ShoppingBagIcon className="w-5 h-5 text-[#2C1810]" />
@@ -85,7 +85,7 @@ export const Header: React.FC = () => {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2.5 rounded-full hover:bg-[#FFF0F5] transition-colors cursor-pointer"
+              className="md:hidden p-2 sm:p-2.5 rounded-full hover:bg-[#FFF0F5] transition-colors cursor-pointer"
               aria-label="Toggle menu"
             >
               {mobileMenuOpen ? (
@@ -127,7 +127,7 @@ export const Header: React.FC = () => {
                       onClick={() => setMobileMenuOpen(false)}
                       className="block text-[#2C1810] font-bold text-lg py-2 cursor-pointer"
                     >
-                      {link.label}
+                      {mounted ? t(link.labelKey) : link.labelKey}
                     </Link>
                   </li>
                 ))}

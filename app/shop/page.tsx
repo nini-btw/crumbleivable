@@ -4,6 +4,8 @@ import { useState, useMemo, use, useEffect } from "react";
 import Link from "next/link";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import { Button } from "@/presentation/components/ui/Button";
+import { Select } from "@/presentation/components/ui/Select";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 import type { Product } from "@/domain/entities/product";
 
 export default function ShopPage({
@@ -19,6 +21,15 @@ export default function ShopPage({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslation();
+
+  // Sort options
+  const sortOptions = [
+    { value: "popular", label: t("shop.sort.name") },
+    { value: "newest", label: t("shop.sort.newest") },
+    { value: "price-asc", label: t("shop.sort.priceLow") },
+    { value: "price-desc", label: t("shop.sort.priceHigh") },
+  ];
 
   // Fetch products from API
   useEffect(() => {
@@ -63,8 +74,7 @@ export default function ShopPage({
     return result;
   }, [products, filter, sort]);
 
-  const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSort = e.target.value;
+  const handleSortChange = (newSort: string) => {
     setSort(newSort);
     const url = new URL(window.location.href);
     url.searchParams.set("sort", newSort);
@@ -74,7 +84,7 @@ export default function ShopPage({
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-[#A07850]">Loading products...</div>
+        <div className="text-[#A07850]">{t("common.loading")}</div>
       </div>
     );
   }
@@ -82,7 +92,7 @@ export default function ShopPage({
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-red-500">Error: {error}</div>
+        <div className="text-red-500">{t("common.error")}: {error}</div>
       </div>
     );
   }
@@ -92,12 +102,10 @@ export default function ShopPage({
       <section className="bg-[#F0E6D6]/30 py-16">
         <div className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1400px]">
           <h1 className="font-display text-4xl sm:text-5xl text-[#2C1810] mb-4">
-            Cookie Shop
+            {t("shop.title")}
           </h1>
           <p className="text-[#A07850] max-w-xl">
-            Browse our selection of freshly baked American-style cookies and
-            pre-made boxes. All cookies are made to order with premium
-            ingredients.
+            {t("shop.subtitle")}
           </p>
         </div>
       </section>
@@ -107,9 +115,9 @@ export default function ShopPage({
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               {[
-                { value: "all", label: "All" },
-                { value: "cookies", label: "Cookies" },
-                { value: "boxes", label: "Boxes" },
+                { value: "all", label: t("shop.filters.all") },
+                { value: "cookies", label: t("shop.filters.cookies") },
+                { value: "boxes", label: t("shop.filters.boxes") },
               ].map((tab) => (
                 <Link
                   key={tab.value}
@@ -126,21 +134,15 @@ export default function ShopPage({
             </div>
 
             <div className="ml-auto">
-              <select
+              <Select
                 value={sort}
                 onChange={handleSortChange}
-                className="bg-white border border-[#E8D5C0] rounded-full px-4 py-2 text-sm text-[#5C3D2E] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 cursor-pointer appearance-none pr-10 relative"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C3D2E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: 'no-repeat',
-                  backgroundPosition: 'right 12px center',
-                }}
-              >
-                <option value="popular">Popular</option>
-                <option value="newest">Newest</option>
-                <option value="price-asc">Price: Low to High</option>
-                <option value="price-desc">Price: High to Low</option>
-              </select>
+                options={sortOptions}
+                placeholder={t("common.sortBy")}
+                size="md"
+                variant="filled"
+                className="w-44"
+              />
             </div>
           </div>
         </div>
@@ -161,10 +163,10 @@ export default function ShopPage({
           ) : (
             <div className="text-center py-20">
               <p className="text-[#A07850] text-lg">
-                No products found. Check back soon!
+                {t("shop.noProducts")}
               </p>
               <Link href="/shop" className="mt-4 inline-block">
-                <Button variant="ghost">View All Products</Button>
+                <Button variant="ghost">{t("common.viewAll")}</Button>
               </Link>
             </div>
           )}

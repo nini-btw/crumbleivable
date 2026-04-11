@@ -27,11 +27,11 @@ export async function generateMetadata({
   // Unwrap the Promise
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  
+
   if (!product) {
     return { title: "Product Not Found" };
   }
-  
+
   return {
     title: product.name,
     description: product.description,
@@ -44,15 +44,11 @@ export async function generateMetadata({
 /**
  * Product detail page
  */
-export default async function ProductPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   // Unwrap the Promise
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  
+
   if (!product) {
     notFound();
   }
@@ -60,17 +56,17 @@ export default async function ProductPage({
   return (
     <div className="min-h-screen">
       {/* Breadcrumb */}
-      <div className="bg-sand/30 border-b border-brown-100">
+      <div className="bg-sand/30 border-brown-100 border-b">
         <div className="container-site py-4">
-          <nav className="flex items-center gap-2 text-sm text-brown-400">
+          <nav className="text-brown-400 flex items-center gap-2 text-sm">
             <Link href="/" className="hover:text-brown-700 transition-colors">
               Home
             </Link>
-            <ChevronRightIcon className="w-4 h-4" />
+            <ChevronRightIcon className="h-4 w-4" />
             <Link href="/shop" className="hover:text-brown-700 transition-colors">
               Shop
             </Link>
-            <ChevronRightIcon className="w-4 h-4" />
+            <ChevronRightIcon className="h-4 w-4" />
             <span className="text-brown-700">{product.name}</span>
           </nav>
         </div>

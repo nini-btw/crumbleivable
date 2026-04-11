@@ -15,6 +15,24 @@ import {
   ArrowLeftIcon,
   CheckCircleIcon,
 } from "lucide-react";
+
+// Product image mapping
+const getProductImage = (slug: string): string => {
+  const imageMap: Record<string, string> = {
+    chocoShips: "/images/chocoShips.png",
+    mm: "/images/mm.png",
+    pistash: "/images/pistash.png",
+    viola: "/images/viola.png",
+    peanut: "/images/peanut.png",
+    ben10: "/images/ben10.png",
+    lotus: "/images/lotus.png",
+    strawbery: "/images/strawbery.png",
+    bueno: "/images/bueno.png",
+    kinder: "/images/kinder.png",
+    tiramisu: "/images/tiramisu.png",
+  };
+  return imageMap[slug] || "/images/bueno.png";
+};
 import { Button } from "@/presentation/components/ui/Button";
 import { Input, Textarea } from "@/presentation/components/ui/Input";
 import { QuantityStepper } from "@/presentation/components/ui/QuantityStepper";
@@ -35,6 +53,7 @@ import {
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Name is required"),
@@ -47,6 +66,7 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const canCheckout = useSelector(selectCanCheckout);
@@ -71,7 +91,7 @@ export default function CartPage() {
     if (!canCheckout) {
       dispatch(
         addToast({
-          message: `Add ${cookiesNeeded} more cookies to checkout`,
+          message: `${t("build.completeSelection")} (${cookiesNeeded})`,
           type: "error",
         })
       );
@@ -113,14 +133,14 @@ export default function CartPage() {
       dispatch(clearCart());
       dispatch(
         addToast({
-          message: "Order placed successfully!",
+          message: t("checkout.success"),
           type: "success",
         })
       );
     } catch (error: any) {
       dispatch(
         addToast({
-          message: error.message || "An error occurred. Please try again.",
+          message: error.message || t("common.error"),
           type: "error",
         })
       );
@@ -142,18 +162,18 @@ export default function CartPage() {
               <CheckCircleIcon className="w-10 h-10 text-green-500" />
             </div>
             <h1 className="font-display text-3xl text-brown-900 mb-4">
-              Order Confirmed!
+              {t("checkout.success")}
             </h1>
             <p className="text-brown-700 mb-2">
-              Thank you for your order. We&apos;ll be in touch soon!
+              {t("footer.tagline")}
             </p>
             {orderId && (
               <p className="text-sm text-brown-400 mb-6">
-                Order ID: {orderId.slice(0, 8)}
+                {t("admin.orders.orderId")}: {orderId.slice(0, 8)}
               </p>
             )}
             <Link href="/shop" className="cursor-pointer">
-              <Button fullWidth className="cursor-pointer">Continue Shopping</Button>
+              <Button fullWidth className="cursor-pointer">{t("cart.continueShopping")}</Button>
             </Link>
           </motion.div>
         </div>
@@ -167,13 +187,13 @@ export default function CartPage() {
         <div className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-lg text-center">
           <ShoppingBagIcon className="w-20 h-20 text-brown-100 mx-auto mb-6" />
           <h1 className="font-display text-3xl text-brown-900 mb-4">
-            Your Box is Empty
+            {t("cart.empty")}
           </h1>
           <p className="text-brown-400 mb-8">
-            Add some delicious cookies to get started!
+            {t("shop.subtitle")}
           </p>
           <Link href="/shop" className="cursor-pointer">
-            <Button className="cursor-pointer">Shop Cookies</Button>
+            <Button className="cursor-pointer">{t("home.hero.shopNow")}</Button>
           </Link>
         </div>
       </div>
@@ -190,10 +210,10 @@ export default function CartPage() {
             className="inline-flex items-center gap-2 text-brown-400 hover:text-brown-700 transition-colors mb-4 cursor-pointer"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            Continue Shopping
+            {t("cart.continueShopping")}
           </Link>
           <h1 className="font-display text-4xl sm:text-5xl text-brown-900">
-            Your Box
+            {t("cart.title")}
           </h1>
         </div>
       </section>
@@ -205,14 +225,13 @@ export default function CartPage() {
             {/* Left: Order Summary */}
             <motion.div variants={fadeInUp} initial="initial" animate="animate">
               <h2 className="font-display text-2xl text-brown-900 mb-6">
-                Order Summary
+                {t("cart.orderSummary")}
               </h2>
 
               {!canCheckout && (
                 <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 mb-6">
                   <p className="text-brown-700 text-sm font-medium text-center">
-                    Add {cookiesNeeded} more cookie
-                    {cookiesNeeded !== 1 ? "s" : ""} to unlock checkout 🍪
+                    {t("build.completeSelection")}: {cookiesNeeded} 🍪
                   </p>
                   <div className="mt-2 h-2 bg-pink-100 rounded-full overflow-hidden">
                     <motion.div
@@ -231,8 +250,13 @@ export default function CartPage() {
                     key={item.product.id}
                     className="flex gap-4 p-4 bg-white rounded-2xl border border-brown-100"
                   >
-                    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50 flex items-center justify-center text-2xl">
-                      🍪
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-pink-50">
+                      <Image
+                        src={getProductImage(item.product.slug)}
+                        alt={item.product.name}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -270,19 +294,19 @@ export default function CartPage() {
 
               <div className="mt-8 space-y-4">
                 <Textarea
-                  label="Cooking Note (Optional)"
-                  placeholder="Any special requests? (e.g., no sugar, extra crispy)"
+                  label={t("checkout.cookingNote")}
+                  placeholder={t("checkout.cookingNotePlaceholder")}
                   value={cookingNote || ""}
                   onChange={(e) => dispatch(setCookingNote(e.target.value))}
-                  helperText="We'll do our best to accommodate your request"
+                  helperText=""
                 />
 
                 <Textarea
-                  label="Gift Note (Optional)"
-                  placeholder="Write a message for the gift card..."
+                  label={t("checkout.giftNote")}
+                  placeholder={t("checkout.giftNotePlaceholder")}
                   value={giftNote || ""}
                   onChange={(e) => dispatch(setGiftNote(e.target.value))}
-                  helperText="We'll write this on a beautiful card inside the box 💌"
+                  helperText=""
                 />
               </div>
             </motion.div>
@@ -295,44 +319,44 @@ export default function CartPage() {
               transition={{ delay: 0.1 }}
             >
               <h2 className="font-display text-2xl text-brown-900 mb-6">
-                Checkout
+                {t("checkout.title")}
               </h2>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <Input
-                  label="Full Name"
-                  placeholder="Your full name"
+                  label={t("checkout.fullName")}
+                  placeholder={t("checkout.fullName")}
                   error={errors.fullName?.message}
                   {...register("fullName")}
                 />
 
                 <Input
-                  label="Phone Number"
+                  label={t("checkout.phone")}
                   placeholder="+213 555 123 456"
                   error={errors.phone?.message}
                   {...register("phone")}
                 />
 
                 <Textarea
-                  label="Delivery Address"
-                  placeholder="Your full address in Oran"
+                  label={t("checkout.address")}
+                  placeholder={t("checkout.address")}
                   error={errors.address?.message}
                   {...register("address")}
                 />
 
                 <div className="bg-white rounded-2xl p-6 border border-brown-100 mt-6">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-brown-700">Subtotal</span>
+                    <span className="text-brown-700">{t("common.subtotal")}</span>
                     <span className="text-brown-900">
                       {formatPrice(total)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
-                    <span className="text-brown-700">Delivery</span>
-                    <span className="text-green-600">Free</span>
+                    <span className="text-brown-700">{t("common.delivery")}</span>
+                    <span className="text-green-600">{t("common.free")}</span>
                   </div>
                   <div className="border-t border-brown-100 pt-4 flex justify-between items-center">
-                    <span className="font-bold text-brown-900">Total</span>
+                    <span className="font-bold text-brown-900">{t("common.total")}</span>
                     <span className="text-2xl font-extrabold text-brown-900">
                       {formatPrice(total)}
                     </span>
@@ -347,12 +371,11 @@ export default function CartPage() {
                   disabled={!canCheckout}
                   className="cursor-pointer"
                 >
-                  {canCheckout ? "Place Order" : `Add ${cookiesNeeded} more`}
+                  {canCheckout ? t("checkout.placeOrder") : `${t("build.completeSelection")} (${cookiesNeeded})`}
                 </Button>
 
                 <p className="text-xs text-brown-400 text-center">
-                  By placing an order, you agree to our terms. We&apos;ll confirm
-                  your order via Telegram.
+                  {t("footer.tagline")}
                 </p>
               </form>
             </motion.div>

@@ -1,21 +1,28 @@
 "use client";
 
 import * as React from "react";
-import { useTranslation } from "react-i18next";
 import { GlobeIcon, CheckIcon } from "lucide-react";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 const languages = [
-  { code: "en", label: "English", dir: "ltr" },
-  { code: "fr", label: "Français", dir: "ltr" },
-  { code: "ar", label: "العربية", dir: "rtl" },
+  { code: "en", label: "English", flag: "🇬🇧", dir: "ltr" },
+  { code: "fr", label: "Français", flag: "🇫🇷", dir: "ltr" },
+  { code: "ar", label: "العربية", flag: "🇸🇦", dir: "rtl" },
 ];
 
 export function LanguageSwitcher() {
-  const { i18n } = useTranslation();
+  const { locale } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [currentLocale, setCurrentLocale] = React.useState(locale || "en");
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
-  const currentLang = languages.find((l) => l.code === i18n.language) || languages[0];
+  // Sync with localStorage on mount
+  React.useEffect(() => {
+    const saved = localStorage.getItem("locale") || "en";
+    setCurrentLocale(saved);
+  }, [locale]);
+
+  const currentLang = languages.find((l) => l.code === currentLocale) || languages[0];
 
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -28,10 +35,13 @@ export function LanguageSwitcher() {
   }, []);
 
   const handleLanguageChange = (langCode: string, dir: string) => {
-    i18n.changeLanguage(langCode);
+    localStorage.setItem("locale", langCode);
+    setCurrentLocale(langCode);
     document.documentElement.dir = dir;
     document.documentElement.lang = langCode;
+    window.dispatchEvent(new CustomEvent("locale-change", { detail: langCode }));
     setIsOpen(false);
+    window.location.reload();
   };
 
   return (
@@ -43,12 +53,12 @@ export function LanguageSwitcher() {
       >
         <GlobeIcon className="w-4 h-4 text-[#5C3D2E]" />
         <span className="text-sm font-medium text-[#5C3D2E]">
-          {currentLang.code.toUpperCase()}
+          {currentLang.flag}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 w-40 bg-white rounded-2xl shadow-lg border border-[#E8D5C0] py-2 z-50">
+        <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-2xl shadow-lg border border-[#E8D5C0] py-2 z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -59,8 +69,11 @@ export function LanguageSwitcher() {
                   : "text-[#5C3D2E] hover:bg-[#FDF6EE]"
               }`}
             >
-              <span className={lang.code === "ar" ? "font-arabic" : ""}>
-                {lang.label}
+              <span className="flex items-center gap-2">
+                <span>{lang.flag}</span>
+                <span className={lang.code === "ar" ? "font-arabic" : ""}>
+                  {lang.label}
+                </span>
               </span>
               {currentLang.code === lang.code && (
                 <CheckIcon className="w-4 h-4" />

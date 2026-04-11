@@ -43,7 +43,9 @@ export default function EditProductPage() {
       <div className="space-y-8">
         <div>
           <h1 className="font-display text-3xl text-[#2C1810]">Product Not Found</h1>
-          <p className="text-[#A07850] mt-1">The product you&apos;re looking for doesn&apos;t exist.</p>
+          <p className="mt-1 text-[#A07850]">
+            The product you&apos;re looking for doesn&apos;t exist.
+          </p>
         </div>
       </div>
     );
@@ -54,7 +56,7 @@ export default function EditProductPage() {
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl text-[#2C1810]">Edit Product</h1>
-        <p className="text-[#A07850] mt-1">Update {product.name}</p>
+        <p className="mt-1 text-[#A07850]">Update {product.name}</p>
       </div>
 
       {/* Form */}

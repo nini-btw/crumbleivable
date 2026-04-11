@@ -48,8 +48,26 @@ const TOTAL = N + CTA_EXTRA;
 const CTA_START = N / TOTAL;
 const CTA_FULL = (N + 0.4) / TOTAL;
 
+const MOBILE_CTA_EXTRA = 0.6;
+const MOBILE_TOTAL = N + MOBILE_CTA_EXTRA;
+const MOBILE_CTA_START = N / MOBILE_TOTAL;
+const MOBILE_CTA_FULL = (N + 0.4) / MOBILE_TOTAL;
+
 export default function HeroSection() {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  const total = isMobile ? MOBILE_TOTAL : TOTAL;
+  const ctaStart = isMobile ? MOBILE_CTA_START : CTA_START;
+  const ctaFull = isMobile ? MOBILE_CTA_FULL : CTA_FULL;
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -63,14 +81,26 @@ export default function HeroSection() {
   });
 
   return (
-    <div ref={containerRef} id="hero-section" className="relative" style={{ height: `${TOTAL * 100}vh` }}>
-      <div className="sticky top-0 h-screen w-full overflow-hidden">
+    <div
+      ref={containerRef}
+      id="hero-section"
+      className="relative"
+      style={{ height: `${total * 100}svh` }}
+    >
+      <div className="sticky top-0 w-full overflow-hidden" style={{ height: "100svh" }}>
         {PANELS.map((panel, index) => (
-          <Panel key={panel.src} panel={panel} index={index} progress={smoothProgress} />
+          <Panel
+            key={panel.src}
+            panel={panel}
+            index={index}
+            progress={smoothProgress}
+            total={total}
+            ctaStart={ctaStart}
+          />
         ))}
-        <CTAOverlay progress={smoothProgress} />
+        <CTAOverlay progress={smoothProgress} ctaStart={ctaStart} ctaFull={ctaFull} />
         <ScrollHint progress={smoothProgress} />
-        <PanelCounter progress={smoothProgress} />
+        <PanelCounter progress={smoothProgress} total={total} ctaStart={ctaStart} />
       </div>
     </div>
   );
@@ -81,13 +111,17 @@ function Panel({
   panel,
   index,
   progress,
+  total,
+  ctaStart,
 }: {
   panel: (typeof PANELS)[0];
   index: number;
   progress: any;
+  total: number;
+  ctaStart: number;
 }) {
-  const start = index / TOTAL;
-  const end = (index + 1) / TOTAL;
+  const start = index / total;
+  const end = (index + 1) / total;
 
   const clipPath = useTransform(
     progress,
@@ -169,30 +203,35 @@ function Panel({
 }
 
 /* ─────────────────────────── CTA OVERLAY ─────────────────────────── */
-function CTAOverlay({ progress }: { progress: any }) {
-  const opacity = useTransform(progress, [CTA_START, CTA_FULL], [0, 1]);
+function CTAOverlay({
+  progress,
+  ctaStart,
+  ctaFull,
+}: {
+  progress: any;
+  ctaStart: number;
+  ctaFull: number;
+}) {
+  const opacity = useTransform(progress, [ctaStart, ctaFull], [0, 1]);
   const pointerEvents = useTransform(opacity, (v: number) => (v > 0.4 ? "auto" : "none"));
 
-  const leftY = useTransform(progress, [CTA_START, CTA_FULL], [70, 0]);
-  const rightScale = useTransform(progress, [CTA_START, CTA_FULL], [0.88, 1]);
-  const rightOpacity = useTransform(progress, [CTA_START + 0.04, CTA_FULL], [0, 1]);
-  const rightY = useTransform(progress, [CTA_START, CTA_FULL], [40, 0]);
+  const leftY = useTransform(progress, [ctaStart, ctaFull], [70, 0]);
+  const rightScale = useTransform(progress, [ctaStart, ctaFull], [0.88, 1]);
+  const rightOpacity = useTransform(progress, [ctaStart + 0.04, ctaFull], [0, 1]);
+  const rightY = useTransform(progress, [ctaStart, ctaFull], [40, 0]);
 
   return (
     <motion.div className="absolute inset-0 z-50" style={{ opacity, pointerEvents }}>
       {/* ── BACKGROUND ── */}
       <div className="absolute inset-0 bg-[#FDF6EE]" />
-      {/* Pink blob top-right */}
       <div
         className="absolute -top-40 -right-40 h-175 w-175 rounded-full opacity-20"
         style={{ background: "radial-gradient(circle, #F4538A 0%, #FFD6E7 45%, transparent 70%)" }}
       />
-      {/* Sand blob bottom-left */}
       <div
         className="absolute -bottom-24 -left-24 h-112.5 w-112.5 rounded-full opacity-35"
         style={{ background: "radial-gradient(circle, #F0E6D6 0%, transparent 70%)" }}
       />
-      {/* Dot grid */}
       <div
         className="absolute inset-0 opacity-[0.035]"
         style={{
@@ -203,10 +242,10 @@ function CTAOverlay({ progress }: { progress: any }) {
 
       {/* ── SPLIT LAYOUT ── */}
       <div className="relative z-10 flex h-full w-full flex-col lg:flex-row">
-        {/* LEFT: Copy + CTA */}
+        {/* LEFT: Copy + CTA — full width on mobile, half on desktop */}
         <motion.div
           style={{ y: leftY }}
-          className="flex flex-1 flex-col justify-end px-8 pt-24 pb-16 sm:px-14 lg:justify-center lg:px-20 lg:pt-0 lg:pb-0"
+          className="flex flex-1 flex-col justify-center px-6 pt-16 pb-12 sm:px-14 lg:px-20 lg:pt-0 lg:pb-0"
         >
           <p
             className="mb-5 text-[10px] font-bold tracking-[0.5em] uppercase"
@@ -217,7 +256,7 @@ function CTAOverlay({ progress }: { progress: any }) {
 
           <h1
             className="mb-6 leading-[0.9] font-black tracking-tighter"
-            style={{ fontSize: "clamp(3rem, 8vw, 7rem)", color: "#2C1810" }}
+            style={{ fontSize: "clamp(2.8rem, 8vw, 7rem)", color: "#2C1810" }}
           >
             Every bite, <span style={{ color: "#F4538A", fontStyle: "italic" }}>a story.</span>
           </h1>
@@ -233,22 +272,22 @@ function CTAOverlay({ progress }: { progress: any }) {
             </span>
           </p>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link href="/shop">
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row md:mt-0 lg:justify-start">
+            <Link href="/shop" className="w-full sm:w-auto">
               <Button
                 size="lg"
-                className="group cursor-pointer rounded-full px-8 font-bold text-white transition-all duration-200 hover:scale-105"
+                className="group w-full cursor-pointer rounded-full px-8 font-bold text-white transition-all duration-200 hover:scale-105"
                 style={{ background: "#F4538A", boxShadow: "0 8px 24px rgba(244,83,138,0.4)" }}
               >
                 Shop Now{" "}
                 <ArrowRightIcon className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
             </Link>
-            <Link href="/build">
+            <Link href="/build" className="w-full sm:w-auto">
               <Button
                 variant="ghost"
                 size="lg"
-                className="cursor-pointer rounded-full border-2 px-8 font-bold transition-all duration-200 hover:scale-105"
+                className="w-full cursor-pointer rounded-full border-2 px-8 font-bold transition-all duration-200 hover:scale-105"
                 style={{ borderColor: "#F4538A", color: "#F4538A", background: "transparent" }}
               >
                 Build Your Box
@@ -257,17 +296,16 @@ function CTAOverlay({ progress }: { progress: any }) {
           </div>
         </motion.div>
 
-        {/* Divider */}
+        {/* Divider — desktop only */}
         <div className="my-16 hidden w-px shrink-0 lg:block" style={{ background: "#E8D5C0" }} />
 
-        {/* RIGHT: Glamour box shot */}
+        {/* RIGHT: Glamour box shot — desktop only */}
         <motion.div
           style={{ scale: rightScale, opacity: rightOpacity, y: rightY }}
           className="hidden w-[48%] shrink-0 flex-col items-center justify-center px-10 py-8 lg:flex"
+          aria-hidden="true"
         >
-          {/* Main box image — large, centred, slightly tilted */}
           <div className="relative w-full">
-            {/* Glow behind the box */}
             <div
               className="absolute inset-0 -z-10 scale-90 rounded-full opacity-40 blur-3xl"
               style={{
@@ -275,7 +313,6 @@ function CTAOverlay({ progress }: { progress: any }) {
               }}
             />
 
-            {/* Tilted box image */}
             <motion.div
               animate={{ rotate: [-1.5, 1.5, -1.5], y: [0, -8, 0] }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
@@ -296,15 +333,11 @@ function CTAOverlay({ progress }: { progress: any }) {
               />
             </motion.div>
 
-            {/* Floating cookie accent — top right */}
             <motion.div
               animate={{ rotate: [0, 12, 0], y: [0, -10, 0] }}
               transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 1 }}
               className="absolute top-10 -right-6 h-20 w-20 overflow-hidden rounded-full shadow-xl"
-              style={{
-                border: "3px solid #FFD6E7",
-                background: "#FFF0F5",
-              }}
+              style={{ border: "3px solid #FFD6E7", background: "#FFF0F5" }}
             >
               <Image
                 src="/images/chocoShips.png"
@@ -315,15 +348,11 @@ function CTAOverlay({ progress }: { progress: any }) {
               />
             </motion.div>
 
-            {/* Floating cookie accent — bottom left */}
             <motion.div
               animate={{ rotate: [0, -10, 0], y: [0, 8, 0] }}
               transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.8 }}
               className="absolute bottom-6 -left-4 h-16 w-16 overflow-hidden rounded-full shadow-lg"
-              style={{
-                border: "3px solid #FFD6E7",
-                background: "#FFF0F5",
-              }}
+              style={{ border: "3px solid #FFD6E7", background: "#FFF0F5" }}
             >
               <Image
                 src="/images/viola.png"
@@ -341,16 +370,24 @@ function CTAOverlay({ progress }: { progress: any }) {
 }
 
 /* ─────────────────────────── PANEL COUNTER ─────────────────────────── */
-function PanelCounter({ progress }: { progress: any }) {
-  const opacity = useTransform(progress, [CTA_START - 0.04, CTA_START], [1, 0]);
+function PanelCounter({
+  progress,
+  total,
+  ctaStart,
+}: {
+  progress: any;
+  total: number;
+  ctaStart: number;
+}) {
+  const opacity = useTransform(progress, [ctaStart - 0.04, ctaStart], [1, 0]);
   return (
     <motion.div
       style={{ opacity }}
       className="pointer-events-none absolute right-8 bottom-8 z-50 flex flex-col items-end gap-1.5 sm:right-12 sm:bottom-12"
     >
       {PANELS.map((_, i) => {
-        const start = i / TOTAL;
-        const end = (i + 1) / TOTAL;
+        const start = i / total;
+        const end = (i + 1) / total;
         const w = useTransform(
           progress,
           [start, start + 0.05, end - 0.05, end],

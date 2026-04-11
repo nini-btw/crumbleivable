@@ -15,23 +15,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/presentation/lib/utils";
 import { logoutAdmin } from "../actions";
+import { AdminLanguageSwitcher } from "@/app/components/LanguageSwitcher";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
-const navItems = [
-  { href: "/admin", icon: LayoutDashboardIcon, label: "Dashboard" },
-  { href: "/admin/orders", icon: ShoppingBagIcon, label: "Orders" },
-  { href: "/admin/products", icon: PackageIcon, label: "Products" },
-  { href: "/admin/drop", icon: ClockIcon, label: "Weekly Drop" },
-  { href: "/admin/votes", icon: VoteIcon, label: "Votes" },
-];
-
-interface AdminSidebarProps {
+export const AdminSidebar: React.FC<{
   userEmail: string;
   isOpen: boolean;
   onClose: () => void;
-}
-
-export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail, isOpen, onClose }) => {
+}> = ({ userEmail, isOpen, onClose }) => {
   const pathname = usePathname();
+  const { t, isRTL } = useTranslation();
+
+  const navItems = [
+    { href: "/admin", icon: LayoutDashboardIcon, labelKey: "admin.sidebar.dashboard" },
+    { href: "/admin/orders", icon: ShoppingBagIcon, labelKey: "admin.sidebar.orders" },
+    { href: "/admin/products", icon: PackageIcon, labelKey: "admin.sidebar.products" },
+    { href: "/admin/drop", icon: ClockIcon, labelKey: "admin.sidebar.weeklyDrop" },
+    { href: "/admin/votes", icon: VoteIcon, labelKey: "admin.sidebar.votes" },
+  ];
 
   const handleLogout = async () => {
     await logoutAdmin();
@@ -42,30 +43,31 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail, isOpen, o
       {/* Backdrop - click to close */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
           onClick={onClose}
         />
       )}
 
       <aside
         className={cn(
-          "fixed top-0 left-0 h-screen w-64 bg-[#2C1810] text-white flex flex-col z-50 transition-transform duration-300",
+          "fixed top-0 left-0 z-50 flex h-screen w-64 flex-col bg-[#2C1810] text-white transition-transform duration-300",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
+        dir={isRTL ? "rtl" : "ltr"}
       >
-        <div className="p-6 border-b border-white/10">
+        <div className="border-b border-white/10 p-6">
           <Link href="/admin" className="flex items-center gap-2" onClick={onClose}>
-            <CookieIcon className="w-8 h-8 text-[#F4538A]" />
+            <CookieIcon className="h-8 w-8 text-[#F4538A]" />
             <div>
               <span className="font-display text-xl text-white">crumbleivable!</span>
-              <span className="text-xs text-white/50 block mt-0.5">
-                Admin Dashboard
+              <span className="mt-0.5 block text-xs text-white/50">
+                {t("admin.topbar.adminDashboard")}
               </span>
             </div>
           </Link>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 space-y-1 overflow-y-auto p-4">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = pathname === item.href;
@@ -76,33 +78,38 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ userEmail, isOpen, o
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-150 cursor-pointer",
+                  "flex cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150",
                   isActive
                     ? "bg-[#F4538A] text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <Icon className="w-5 h-5" />
-                {item.label}
+                <Icon className="h-5 w-5" />
+                {t(item.labelKey)}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-white/10 space-y-2">
+        <div className="space-y-2 border-t border-white/10 p-4">
+          {/* Language Switch - Desktop Only */}
+          <div className="">
+            <AdminLanguageSwitcher />
+          </div>
+
           {/* User Info */}
           <div className="flex items-center gap-3 px-4 py-2 text-sm text-white/60">
-            <UserIcon className="w-4 h-4" />
+            <UserIcon className="h-4 w-4" />
             <span className="truncate">{userEmail}</span>
           </div>
-          
+
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-white/70 hover:bg-white/10 hover:text-white transition-all w-full cursor-pointer"
+            className="flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-white/70 transition-all hover:bg-white/10 hover:text-white"
           >
-            <LogOutIcon className="w-5 h-5" />
-            Sign Out
+            <LogOutIcon className="h-5 w-5" />
+            {t("admin.sidebar.signOut")}
           </button>
         </div>
       </aside>

@@ -1,14 +1,31 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
-import { PlusIcon, Trash2Icon, RotateCcwIcon, ChevronUpIcon, ChevronDownIcon, XIcon, SparklesIcon, BarChart3Icon, TrophyIcon, CookieIcon } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { PlusIcon, Trash2Icon, RotateCcwIcon, ChevronUpIcon, ChevronDownIcon, XIcon, SparklesIcon, BarChart3Icon, TrophyIcon, CookieIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
+import { Select } from "@/presentation/components/ui/Select";
 import type { Product, CookiePiece } from "@/domain/entities/product";
 import type { VoteCandidate } from "@/domain/entities/vote";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+
+type ProductFormData = {
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  type: "cookie" | "box";
+  isActive: boolean;
+  images: string[];
+  flavour?: string;
+  allergens?: string[];
+  pieces?: any[];
+  isNew?: boolean;
+  isSoldOut?: boolean;
+};
 
 // Progress Bar Component for Charts
-function VoteProgressBar({ candidate, totalVotes, maxVotes, rank }: { candidate: VoteCandidate; totalVotes: number; maxVotes: number; rank?: number }) {
+function VoteProgressBar({ candidate, totalVotes, maxVotes, rank, t }: { candidate: VoteCandidate; totalVotes: number; maxVotes: number; rank?: number; t: (key: string) => string }) {
   const percentage = totalVotes > 0 ? Math.round((candidate.voteCount / totalVotes) * 100) : 0;
   const barWidth = maxVotes > 0 ? (candidate.voteCount / maxVotes) * 100 : 0;
   
@@ -25,7 +42,7 @@ function VoteProgressBar({ candidate, totalVotes, maxVotes, rank }: { candidate:
           )}
           <span className="font-medium text-[#2C1810]">{candidate.cookieName}</span>
         </div>
-        <span className="text-[#A07850]">{candidate.voteCount} votes ({percentage}%)</span>
+        <span className="text-[#A07850]">{candidate.voteCount} {t('vote.votes')} ({percentage}%)</span>
       </div>
       <div className="h-3 bg-[#F0E6D6] rounded-full overflow-hidden">
         <div 
@@ -42,12 +59,14 @@ function VoteCard({
   candidate, 
   rank, 
   totalVotes, 
-  onDelete 
+  onDelete,
+  t
 }: { 
   candidate: VoteCandidate; 
   rank?: number;
   totalVotes: number;
   onDelete: () => void;
+  t: (key: string) => string;
 }) {
   const percentage = totalVotes > 0 ? Math.round((candidate.voteCount / totalVotes) * 100) : 0;
   const rankColors = ["bg-yellow-100 text-yellow-800 border-yellow-300", "bg-gray-100 text-gray-800 border-gray-300", "bg-amber-100 text-amber-800 border-amber-300"];
@@ -80,9 +99,9 @@ function VoteCard({
       <div className="flex items-center justify-between pt-2 border-t border-[#F0E6D6]">
         <div className="flex items-center gap-2">
           <CookieIcon className="w-4 h-4 text-[#F4538A]" />
-          <span className="font-bold text-[#F4538A]">{candidate.voteCount} votes</span>
+          <span className="font-bold text-[#F4538A]">{candidate.voteCount} {t('vote.votes')}</span>
         </div>
-        <span className="text-sm text-[#A07850]">{percentage}% of total</span>
+        <span className="text-sm text-[#A07850]">{percentage}% {t('admin.votes.totalVotes')}</span>
       </div>
       
       <div className="h-2 bg-[#F0E6D6] rounded-full overflow-hidden">
@@ -95,30 +114,97 @@ function VoteCard({
   );
 }
 
-// Quick Add Product Modal Component
+// Quick Add Product Modal Component - Uses same form as products page
 function QuickAddProductModal({
   isOpen,
   onClose,
   onProductCreated,
+  t,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onProductCreated: (product: Product) => void;
+  t: (key: string) => string;
 }) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     slug: "",
     description: "",
     price: 150,
+    type: "cookie",
+    isActive: false, // Inactive by default for vote candidates
+    images: [],
     flavour: "",
-    allergens: "",
+    allergens: [],
+    pieces: [],
     isNew: true,
     isSoldOut: false,
-    isActive: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setFormData({
+        name: "",
+        slug: "",
+        description: "",
+        price: 150,
+        type: "cookie",
+        isActive: false, // Inactive by default
+        images: [],
+        flavour: "",
+        allergens: [],
+        pieces: [],
+        isNew: true,
+        isSoldOut: false,
+      });
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image size must be less than 5MB");
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData((prev) => ({ ...prev, images: [result.url] }));
+      } else {
+        alert(result.error || "Failed to upload image");
+      }
+    } catch (error) {
+      console.error("Failed to upload image:", error);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,17 +212,8 @@ function QuickAddProductModal({
 
     try {
       const productData = {
-        name: formData.name,
-        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-"),
-        description: formData.description,
-        price: Number(formData.price),
-        type: "cookie" as const,
-        isActive: formData.isActive,
-        images: [],
-        flavour: formData.flavour,
-        allergens: formData.allergens.split(",").map((s) => s.trim()).filter(Boolean),
-        isNew: formData.isNew,
-        isSoldOut: formData.isSoldOut,
+        ...formData,
+        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
       };
 
       const response = await fetch("/api/products", {
@@ -149,153 +226,217 @@ function QuickAddProductModal({
       if (result.success) {
         onProductCreated(result.data);
         onClose();
-        setFormData({
-          name: "",
-          slug: "",
-          description: "",
-          price: 150,
-          flavour: "",
-          allergens: "",
-          isNew: true,
-          isSoldOut: false,
-          isActive: false,
-        });
       } else {
-        alert(result.error || "Failed to create product");
+        alert(result.error || t("common.error"));
       }
     } catch (error) {
       console.error("Failed to create product:", error);
-      alert("Failed to create product");
+      alert(t("common.error"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-[#E8D5C0] flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <SparklesIcon className="w-5 h-5 text-[#F4538A]" />
-            <h2 className="text-lg font-bold text-[#2C1810]">Quick Add Cookie for Vote</h2>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-[#F0E6D6] rounded-lg transition-colors">
-            <XIcon className="w-5 h-5 text-[#A07850]" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-[#E8D5C0] p-4 sm:p-6">
+          <h2 className="text-lg font-bold text-[#2C1810]">
+            {t("admin.products.form.addTitle")}
+          </h2>
+          <button onClick={onClose} className="rounded-lg p-2 transition-colors hover:bg-[#F0E6D6]">
+            <XIcon className="h-5 w-5 text-[#A07850]" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:p-6">
+          {/* Image Upload */}
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
-              Cookie Name *
+            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+              {t("admin.products.form.productImage")}
             </label>
             <input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20"
-              placeholder="e.g., Lemon Lavender"
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageUpload}
+              accept="image/*"
+              className="hidden"
             />
+
+            <div className="flex gap-3">
+              {/* Image preview tile */}
+              {formData.images[0] && (
+                <div className="group relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-[#F4538A]">
+                  <img
+                    src={formData.images[0]}
+                    alt="Preview"
+                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-black/0 transition-colors duration-200 group-hover:bg-black/25" />
+                  <span className="absolute bottom-1.5 left-1.5 rounded-full bg-[#F4538A] px-1.5 py-0.5 text-[10px] font-semibold text-white shadow">
+                    Main
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, images: [] }))}
+                    className="absolute top-1.5 right-1.5 rounded-full bg-white/90 p-1 text-red-500 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
+                  >
+                    <XIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
+
+              {/* Upload / Replace tile */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="flex h-32 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#E8D5C0] transition-colors hover:border-[#F4538A] hover:bg-[#FFF0F5] disabled:opacity-50"
+              >
+                {isUploading ? (
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#F4538A] border-t-transparent" />
+                ) : (
+                  <>
+                    <UploadIcon className="h-8 w-8 text-[#A07850]" />
+                    <span className="text-sm text-[#A07850]">
+                      {formData.images[0] ? "Replace image" : t("admin.products.form.uploadImage")}
+                    </span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                {t("admin.products.form.nameLabel")} *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                {t("admin.products.form.priceLabel")} *
+              </label>
+              <input
+                type="number"
+                required
+                min={0}
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
-              Description *
+            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+              {t("admin.products.form.description")} *
             </label>
             <textarea
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              className="w-full bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 resize-none"
-              placeholder="Describe this cookie flavor..."
+              className="w-full resize-none rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
-                Price (DA)
-              </label>
-              <input
-                type="number"
-                min={0}
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="w-full bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20"
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
-                Flavour
+              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                {t("admin.products.form.flavour")}
               </label>
               <input
                 type="text"
                 value={formData.flavour}
                 onChange={(e) => setFormData({ ...formData, flavour: e.target.value })}
-                className="w-full bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20"
-                placeholder="e.g., Lemon"
+                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                {t("admin.products.form.allergens")}
+              </label>
+              <input
+                type="text"
+                defaultValue={formData.allergens?.join(", ") || ""}
+                onBlur={(e) => setFormData({ ...formData, allergens: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
+                placeholder={t("admin.products.form.allergensPlaceholder")}
+                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
               />
             </div>
           </div>
 
-          <div>
-            <label className="text-xs font-bold uppercase tracking-widest text-[#A07850] block mb-2">
-              Allergens (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={formData.allergens}
-              onChange={(e) => setFormData({ ...formData, allergens: e.target.value })}
-              className="w-full bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20"
-              placeholder="e.g., gluten, dairy, eggs"
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                {t("admin.products.form.typeLabel")} *
+              </label>
+              <Select
+                value={formData.type}
+                onChange={(value) => setFormData({ ...formData, type: value as "cookie" | "box" })}
+                options={[
+                  { value: "cookie", label: t("admin.products.form.cookie") },
+                  { value: "box", label: t("admin.products.form.box") },
+                ]}
+                placeholder={t("admin.products.form.typeLabel")}
+                size="md"
+                variant="default"
+                className="w-full"
+              />
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-4 pt-2">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.isNew}
-                onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                className="w-4 h-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
-              />
-              <span className="text-sm text-[#2C1810]">Mark as New</span>
-            </label>
-            
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-[#E8D5C0] p-3 transition-colors hover:border-[#F4538A]/50">
               <input
                 type="checkbox"
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="w-4 h-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
+                className="h-4 w-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
               />
-              <span className="text-sm text-[#2C1810]">Active (visible in shop)</span>
+              <span className="text-sm text-[#2C1810]">{t("admin.products.form.activeLabel")}</span>
+            </label>
+
+            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-[#E8D5C0] p-3 transition-colors hover:border-[#F4538A]/50">
+              <input
+                type="checkbox"
+                checked={formData.isNew}
+                onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
+                className="h-4 w-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
+              />
+              <span className="text-sm text-[#2C1810]">{t("admin.products.form.markAsNew")}</span>
             </label>
           </div>
 
           <div className="bg-[#FFF0F5] rounded-xl p-3 text-sm text-[#5C3D2E]">
-            <p className="font-medium mb-1">What happens next:</p>
+            <p className="font-medium mb-1">{t("admin.votes.quickAdd.whatHappens")}</p>
             <ul className="list-disc list-inside space-y-1">
-              <li>Product created and added to Products list</li>
-              <li>Automatically added to Vote list</li>
-              <li>{formData.isActive ? "Will be visible in shop immediately" : "Will be hidden from shop until activated"}</li>
+              <li>{t("admin.votes.quickAdd.step1")}</li>
+              <li>{t("admin.votes.quickAdd.step2")}</li>
+              <li>{formData.isActive ? t("admin.votes.quickAdd.step3Active") : t("admin.votes.quickAdd.step3Inactive")}</li>
             </ul>
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
-              isLoading={isSubmitting}
+              isLoading={isSubmitting || isUploading}
               className="flex-1 bg-[#F4538A] hover:bg-[#D63A72]"
             >
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Create & Add to Vote
+              {t("admin.products.form.create")}
             </Button>
           </div>
         </form>
@@ -316,6 +457,7 @@ export default function AdminVotesPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [showChart, setShowChart] = useState(true);
+  const { t, isRTL } = useTranslation();
 
   useEffect(() => {
     async function fetchData() {
@@ -389,7 +531,7 @@ export default function AdminVotesPage() {
         setCandidates([...candidates, result.data]);
         setSelectedProduct("");
       } else {
-        alert(result.error || "Failed to add candidate");
+        alert(result.error || t('admin.common.error'));
       }
     } catch (error) {
       console.error("Failed to add candidate:", error);
@@ -419,8 +561,8 @@ export default function AdminVotesPage() {
           setProducts(productsData.data);
         }
         
-        const statusText = product.isActive ? "active" : "inactive";
-        alert(`"${product.name}" has been:\n1. Created as a ${statusText} product\n2. Added to the vote list\n\n${product.isActive ? 'It will appear in the shop immediately.' : 'It will NOT appear in the shop until activated.'}`);
+        const statusText = product.isActive ? t('admin.products.active') : t('admin.products.inactive');
+        alert(`"${product.name}" ${t('admin.votes.quickAdd.step1')}\n${statusText}`);
       }
     } catch (error) {
       console.error("Failed to add candidate:", error);
@@ -428,7 +570,7 @@ export default function AdminVotesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this candidate?")) return;
+    if (!confirm(t('admin.votes.deleteConfirm'))) return;
 
     try {
       const response = await fetch(`/api/votes/${id}`, {
@@ -439,16 +581,16 @@ export default function AdminVotesPage() {
       if (result.success) {
         setCandidates(candidates.filter((c) => c.id !== id));
       } else {
-        alert(result.error || "Failed to delete candidate");
+        alert(result.error || t('admin.common.error'));
       }
     } catch (error) {
       console.error("Failed to delete candidate:", error);
-      alert("Failed to delete candidate");
+      alert(t('admin.common.error'));
     }
   };
 
   const handleReset = async () => {
-    if (!confirm("Are you sure you want to reset all votes?")) return;
+    if (!confirm(t('admin.votes.resetConfirm'))) return;
 
     try {
       const response = await fetch("/api/votes/reset", { method: "POST" });
@@ -456,11 +598,11 @@ export default function AdminVotesPage() {
       if (result.success) {
         setCandidates(candidates.map((c) => ({ ...c, voteCount: 0 })));
       } else {
-        alert(result.error || "Failed to reset votes");
+        alert(result.error || t('admin.common.error'));
       }
     } catch (error) {
       console.error("Failed to reset votes:", error);
-      alert("Failed to reset votes");
+      alert(t('admin.common.error'));
     }
   };
 
@@ -485,8 +627,8 @@ export default function AdminVotesPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="font-display text-3xl text-[#2C1810]">Vote Management</h1>
-          <p className="text-[#A07850] mt-1">Loading...</p>
+          <h1 className="font-display text-3xl text-[#2C1810]">{t('admin.votes.title')}</h1>
+          <p className="text-[#A07850] mt-1">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -497,12 +639,12 @@ export default function AdminVotesPage() {
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">Vote Management</h1>
-          <p className="text-[#A07850] mt-1">Manage community vote candidates</p>
+          <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">{t('admin.votes.title')}</h1>
+          <p className="text-[#A07850] mt-1">{t('admin.votes.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -511,7 +653,7 @@ export default function AdminVotesPage() {
             className="cursor-pointer"
           >
             <BarChart3Icon className="w-4 h-4 mr-2" />
-            {showChart ? 'Hide Chart' : 'Show Chart'}
+            {showChart ? t('admin.votes.hideChart') : t('admin.votes.showChart')}
           </Button>
           <Button
             variant="ghost"
@@ -519,7 +661,7 @@ export default function AdminVotesPage() {
             className="cursor-pointer text-red-500 hover:bg-red-50"
           >
             <RotateCcwIcon className="w-4 h-4 mr-2" />
-            Reset
+            {t('admin.votes.reset')}
           </Button>
         </div>
       </div>
@@ -530,7 +672,7 @@ export default function AdminVotesPage() {
           <div className="flex items-center gap-2 mb-4">
             <TrophyIcon className="w-5 h-5 text-[#F4538A]" />
             <h2 className="font-bold text-[#2C1810] text-lg">
-              Vote Results ({totalVotes.toLocaleString()} total votes)
+              {t('admin.votes.voteResults')} ({totalVotes.toLocaleString()} {t('admin.votes.totalVotes')})
             </h2>
           </div>
           <div className="space-y-2">
@@ -541,6 +683,7 @@ export default function AdminVotesPage() {
                 totalVotes={totalVotes}
                 maxVotes={maxVotes}
                 rank={index + 1}
+                t={t}
               />
             ))}
           </div>
@@ -549,32 +692,27 @@ export default function AdminVotesPage() {
 
       {/* Add From Existing Products */}
       <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
-        <h2 className="font-bold text-[#2C1810] text-lg mb-4">Add from Existing Products</h2>
+        <h2 className="font-bold text-[#2C1810] text-lg mb-4">{t('admin.votes.addFromProduct')}</h2>
         <div className="flex flex-col sm:flex-row gap-4">
-          <select
+          <Select
             value={selectedProduct}
-            onChange={(e) => setSelectedProduct(e.target.value)}
-            className="flex-1 bg-white border-2 border-[#E8D5C0] rounded-2xl px-4 py-3 text-[#2C1810] focus:outline-none focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 cursor-pointer appearance-none text-sm sm:text-base"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C3D2E' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "right 16px center",
-            }}
-          >
-            <option value="">Select a cookie...</option>
-            {availableProducts.map((product) => (
-              <option key={product.id} value={product.id}>
-                {product.name}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedProduct}
+            options={availableProducts.map((product) => ({
+              value: product.id,
+              label: product.name,
+            }))}
+            placeholder={t('admin.votes.selectCookie')}
+            size="md"
+            variant="default"
+            className="flex-1"
+          />
           <Button
             onClick={handleAddFromProduct}
             disabled={!selectedProduct}
             className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72] whitespace-nowrap"
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            Add to Vote
+            {t('admin.votes.addToVote')}
           </Button>
         </div>
       </div>
@@ -585,10 +723,10 @@ export default function AdminVotesPage() {
           <div>
             <h2 className="font-bold text-[#2C1810] text-lg flex items-center gap-2">
               <SparklesIcon className="w-5 h-5 text-[#F4538A]" />
-              Quick Add New Cookie
+              {t('admin.votes.quickAdd.title')}
             </h2>
             <p className="text-[#A07850] text-sm mt-1">
-              Create a new cookie and add it to vote instantly
+              {t('admin.votes.quickAdd.subtitle')}
             </p>
           </div>
           <Button
@@ -596,14 +734,14 @@ export default function AdminVotesPage() {
             className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72] whitespace-nowrap"
           >
             <PlusIcon className="w-4 h-4 mr-2" />
-            Quick Add Cookie
+            {t('admin.votes.quickAdd.button')}
           </Button>
         </div>
       </div>
 
       {/* Candidates Section */}
       <div className="space-y-4">
-        <h2 className="font-bold text-[#2C1810] text-lg">Vote Candidates</h2>
+        <h2 className="font-bold text-[#2C1810] text-lg">{t('admin.votes.candidates')}</h2>
         
         {/* Desktop Table */}
         <div className="hidden sm:block bg-white rounded-3xl border border-[#E8D5C0] overflow-hidden">
@@ -611,10 +749,10 @@ export default function AdminVotesPage() {
             <table className="w-full text-sm">
               <thead className="bg-[#F0E6D6]/50">
                 <tr>
-                  <SortHeader field="name">Cookie</SortHeader>
-                  <SortHeader field="votes">Votes</SortHeader>
+                  <SortHeader field="name">{t('admin.votes.cookie')}</SortHeader>
+                  <SortHeader field="votes">{t('admin.votes.votes')}</SortHeader>
                   <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold uppercase tracking-widest text-[#A07850]">
-                    Actions
+                    {t('admin.products.actions')}
                   </th>
                 </tr>
               </thead>
@@ -642,7 +780,7 @@ export default function AdminVotesPage() {
                           <button
                             onClick={() => handleDelete(candidate.id)}
                             className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                            title="Delete"
+                            title={t('common.delete')}
                           >
                             <Trash2Icon className="w-4 h-4 text-red-400" />
                           </button>
@@ -656,7 +794,7 @@ export default function AdminVotesPage() {
           </div>
           {candidates.length === 0 && (
             <div className="p-8 text-center text-[#A07850]">
-              No vote candidates yet. Add some!
+              {t('admin.votes.noCandidates')}
             </div>
           )}
         </div>
@@ -670,11 +808,12 @@ export default function AdminVotesPage() {
               rank={index + 1}
               totalVotes={totalVotes}
               onDelete={() => handleDelete(candidate.id)}
+              t={t}
             />
           ))}
           {candidates.length === 0 && (
             <div className="p-8 text-center text-[#A07850] bg-white rounded-3xl border border-[#E8D5C0]">
-              No vote candidates yet. Add some!
+              {t('admin.votes.noCandidates')}
             </div>
           )}
         </div>
@@ -685,6 +824,7 @@ export default function AdminVotesPage() {
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
         onProductCreated={handleProductCreated}
+        t={t}
       />
     </div>
   );

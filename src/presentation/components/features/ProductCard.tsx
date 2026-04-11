@@ -14,6 +14,7 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { gridItem } from "@/presentation/lib/animations";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 export interface ProductCardProps {
   product: Product;
@@ -22,13 +23,20 @@ export interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const isBox = product.type === "box";
 
   let badge: string | null = null;
+  let badgeVariant: "new" | "soldOut" | "pink" = "new";
   if (!isBox) {
     const cookie = product as { isNew?: boolean; isSoldOut?: boolean };
-    if (cookie.isSoldOut) badge = "Sold Out";
-    else if (cookie.isNew) badge = "New";
+    if (cookie.isSoldOut) {
+      badge = t("shop.soldOut");
+      badgeVariant = "soldOut";
+    } else if (cookie.isNew) {
+      badge = t("shop.new");
+      badgeVariant = "new";
+    }
   }
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -43,14 +51,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
     dispatch(addItem({ product, quantity: 1 }));
     dispatch(
       addToast({
-        message: `${product.name} added to cart!`,
+        message: `${product.name} ${t("product.added")}`,
         type: "success",
       })
     );
   };
 
-  // Map product slugs to image filenames
-  const getProductImage = (slug: string) => {
+  // Get product image - use product.images if available, otherwise fall back to mapping
+  const getProductImage = (product: Product) => {
+    // First priority: use the uploaded product image
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    
+    // Fallback: map product slugs to default images
     const imageMap: Record<string, string> = {
       // cookies
       chocoShips: "/images/chocoShips.png",
@@ -67,7 +81,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
       kinder: "/images/kinder.png",
       tiramisu: "/images/tiramisu.png",
     };
-    return imageMap[slug] || "/images/bueno.png";
+    return imageMap[product.slug] || "/images/bueno.png";
   };
 
   return (
@@ -81,7 +95,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
         <Card className="group flex h-full cursor-pointer flex-col">
           <div className="relative aspect-square overflow-hidden bg-[#FFF0F5]">
             <Image
-              src={getProductImage(product.slug)}
+              src={getProductImage(product)}
               alt={product.name}
               fill
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
@@ -90,12 +104,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
             />
             {badge && (
               <div className="absolute top-3 left-3">
-                <Badge variant={badge === "Sold Out" ? "soldOut" : "new"}>{badge}</Badge>
+                <Badge variant={badgeVariant}>{badge}</Badge>
               </div>
             )}
             {isBox && (
               <div className="absolute top-3 left-3">
-                <Badge variant="pink">Box</Badge>
+                <Badge variant="pink">{t("shop.filters.boxes")}</Badge>
               </div>
             )}
           </div>
@@ -117,7 +131,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
                 size="sm"
                 className="cursor-pointer !rounded-full !p-2.5"
                 onClick={handleAddToCart}
-                disabled={badge === "Sold Out"}
+                disabled={badge === t("shop.soldOut")}
               >
                 <PlusIcon className="h-4 w-4" />
               </Button>

@@ -8,11 +8,13 @@ import { Button } from "@/presentation/components/ui/Button";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import HeroSection from "./HeroSection";
 import CountdownSection from "./CountdownSection";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 import type { Product } from "@/domain/entities/product";
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -45,23 +47,23 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 gap-4">
             <div>
               <h2 className="font-display text-3xl sm:text-4xl text-[#2C1810]">
-                This Week&apos;s Picks
+                {t("home.featured.title")}
               </h2>
               <p className="text-[#A07850] mt-2">
-                Our most popular cookies, freshly baked
+                {t("home.featured.subtitle")}
               </p>
             </div>
             <Link
               href="/shop"
               className="inline-flex items-center gap-2 text-[#F4538A] hover:text-[#D63A72] font-semibold text-sm transition-colors cursor-pointer"
             >
-              View All
+              {t("common.viewAll")}
               <ArrowRightIcon className="w-4 h-4" />
             </Link>
           </div>
 
           {loading ? (
-            <div className="text-center py-12 text-[#A07850]">Loading products...</div>
+            <div className="text-center py-12 text-[#A07850]">{t("common.loading")}</div>
           ) : products.length > 0 ? (
             <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {products.map((product, index) => (
@@ -70,7 +72,7 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="text-center py-12 text-[#A07850]">
-              No products available. Check back soon!
+              {t("shop.noProducts")}
             </div>
           )}
         </div>
@@ -83,11 +85,10 @@ export default function HomePage() {
         <div className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1400px] relative">
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl text-white mb-4">
-              Create Your Perfect Box
+              {t("build.title")}
             </h2>
             <p className="text-white/80 text-lg mb-8">
-              Pick 3 or more of your favorite cookies and build a custom box
-              that&apos;s uniquely yours.
+              {t("build.subtitle")}
             </p>
             <Link href="/build" className="cursor-pointer">
               <Button
@@ -95,7 +96,7 @@ export default function HomePage() {
                 size="lg"
                 className="border-2 border-white text-white hover:bg-white hover:text-[#F4538A] cursor-pointer"
               >
-                Start Building
+                {t("home.hero.buildBox")}
                 <ArrowRightIcon className="w-4 h-4" />
               </Button>
             </Link>
@@ -107,10 +108,10 @@ export default function HomePage() {
         <div className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1400px]">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="font-display text-3xl sm:text-4xl text-[#2C1810] mb-4">
-              How It Works
+              {t("home.features.fresh.title")}
             </h2>
             <p className="text-[#A07850]">
-              Fresh cookies delivered to your door in 3 simple steps
+              {t("home.features.fresh.desc")}
             </p>
           </div>
 
@@ -118,18 +119,18 @@ export default function HomePage() {
             {[
               {
                 step: "01",
-                title: "Pick Your Cookies",
-                description: "Browse our selection and choose your favorites",
+                title: t("home.features.fresh.title"),
+                description: t("home.features.fresh.desc"),
               },
               {
                 step: "02",
-                title: "Build Your Box",
-                description: "Mix and match to create your perfect box of 3+",
+                title: t("home.features.delivery.title"),
+                description: t("home.features.delivery.desc"),
               },
               {
                 step: "03",
-                title: "We Deliver",
-                description: "Freshly baked and delivered to your door in Oran",
+                title: t("home.features.custom.title"),
+                description: t("home.features.custom.desc"),
               },
             ].map((item) => (
               <div

@@ -9,6 +9,7 @@ import { Button } from "@/presentation/components/ui/Button";
 import { Input } from "@/presentation/components/ui/Input";
 import { fadeInUp } from "@/presentation/lib/animations";
 import { loginAdmin } from "../actions";
+import Link from "next/link";
 
 function LoginForm() {
   const router = useRouter();
@@ -42,29 +43,29 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[#2C1810] flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#2C1810] p-4">
       <motion.div
         variants={fadeInUp}
         initial="initial"
         animate="animate"
         className="w-full max-w-md"
       >
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-[#F4538A] rounded-2xl mb-4">
-            <CookieIcon className="w-8 h-8 text-white" />
-          </div>
+        <div className="mb-8 text-center">
+          <Link href="/">
+            <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F4538A]">
+              <CookieIcon className="h-8 w-8 text-white" />
+            </div>
+          </Link>
           <h1 className="font-display text-3xl text-white">crumbleivable!</h1>
-          <p className="text-white/70 mt-2">Admin Dashboard</p>
+          <p className="mt-2 text-white/70">Admin Dashboard</p>
         </div>
 
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-[0_8px_32px_rgba(44,24,16,0.16)]">
-          <h2 className="font-bold text-xl text-[#2C1810] mb-6">
-            Sign In
-          </h2>
+        <div className="rounded-3xl bg-white p-6 shadow-[0_8px_32px_rgba(44,24,16,0.16)] sm:p-8">
+          <h2 className="mb-6 text-xl font-bold text-[#2C1810]">Sign In</h2>
 
           {error && (
-            <div className="bg-red-50 border border-red-100 rounded-xl p-4 mb-6 flex items-center gap-3 text-red-600 text-sm">
-              <AlertCircleIcon className="w-5 h-5 flex-shrink-0" />
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+              <AlertCircleIcon className="h-5 w-5 flex-shrink-0" />
               {error}
             </div>
           )}
@@ -97,12 +98,12 @@ function LoginForm() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-[#A07850] mt-4">
+          <p className="mt-4 text-center text-sm text-[#A07850]">
             Default: admin@crumbleivable.com / admin123
           </p>
         </div>
 
-        <p className="text-center text-white/50 text-sm mt-8">
+        <p className="mt-8 text-center text-sm text-white/50">
           © {new Date().getFullYear()} Crumbleivable!
         </p>
       </motion.div>
@@ -112,11 +113,13 @@ function LoginForm() {
 
 export default function AdminLoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#2C1810] flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#2C1810]">
+          <div className="text-white">Loading...</div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

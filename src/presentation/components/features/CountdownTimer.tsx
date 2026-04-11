@@ -3,6 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { TimeRemaining } from "@/domain/entities/drop";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 export interface CountdownTimerProps {
   timeRemaining: TimeRemaining;
@@ -39,6 +40,8 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
   timeRemaining,
   onComplete,
 }) => {
+  const { t } = useTranslation();
+
   React.useEffect(() => {
     if (timeRemaining.total <= 0 && onComplete) {
       onComplete();
@@ -49,7 +52,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
     return (
       <div className="text-center py-4">
         <span className="text-[#F4538A] font-bold text-lg animate-pulse">
-          The drop is live! 🎉
+          {t("admin.drop.dropLive")}
         </span>
       </div>
     );
@@ -57,19 +60,19 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({
 
   return (
     <div className="inline-flex items-center gap-2 sm:gap-4">
-      <TimeUnit value={timeRemaining.days} label="Days" />
+      <TimeUnit value={timeRemaining.days} label={t("home.hero.days")} />
       <span className="text-[#2C1810] font-display text-xl sm:text-3xl lg:text-4xl -mt-4">
         :
       </span>
-      <TimeUnit value={timeRemaining.hours} label="Hours" />
+      <TimeUnit value={timeRemaining.hours} label={t("home.hero.hours")} />
       <span className="text-[#2C1810] font-display text-xl sm:text-3xl lg:text-4xl -mt-4">
         :
       </span>
-      <TimeUnit value={timeRemaining.minutes} label="Mins" />
+      <TimeUnit value={timeRemaining.minutes} label={t("home.hero.mins")} />
       <span className="text-[#2C1810] font-display text-xl sm:text-3xl lg:text-4xl -mt-4">
         :
       </span>
-      <TimeUnit value={timeRemaining.seconds} label="Secs" />
+      <TimeUnit value={timeRemaining.seconds} label={t("home.hero.secs")} />
     </div>
   );
 };

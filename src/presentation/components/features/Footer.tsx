@@ -3,15 +3,18 @@
 import * as React from "react";
 import Link from "next/link";
 import { CookieIcon } from "lucide-react";
-
-const footerLinks = [
-  { href: "/shop", label: "Shop" },
-  { href: "/build", label: "Build Your Box" },
-  { href: "/vote", label: "Vote" },
-  { href: "/cart", label: "Cart" },
-];
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 export const Footer: React.FC = () => {
+  const { t } = useTranslation();
+
+  const footerLinks = [
+    { href: "/shop", label: t("nav.shop") },
+    { href: "/build", label: t("nav.build") },
+    { href: "/vote", label: t("nav.vote") },
+    { href: "/cart", label: t("nav.cart") },
+  ];
+
   return (
     <footer className="bg-[#2C1810] text-white">
       <div className="mx-auto w-full px-4 sm:px-8 lg:px-12 max-w-[1400px] py-12 lg:py-16">
@@ -24,15 +27,14 @@ export const Footer: React.FC = () => {
               </span>
             </Link>
             <p className="text-white/70 text-sm max-w-sm">
-              Chewy, gooey American-style cookies delivered to your door in
-              Wahran (Oran), Algeria. Handmade with love, baked to perfection.
+              {t("footer.tagline")}
             </p>
             <p className="text-[#F4538A] font-semibold mt-4">Bake it happen 🍪</p>
           </div>
 
           <div>
             <h4 className="font-bold text-sm uppercase tracking-widest text-white/50 mb-4">
-              Quick Links
+              {t("footer.quickLinks")}
             </h4>
             <ul className="space-y-2">
               {footerLinks.map((link) => (
@@ -50,7 +52,7 @@ export const Footer: React.FC = () => {
 
           <div>
             <h4 className="font-bold text-sm uppercase tracking-widest text-white/50 mb-4">
-              Contact
+              {t("footer.contact")}
             </h4>
             <p className="text-white/70 text-sm">
               Wahran (Oran), Algeria
@@ -63,7 +65,7 @@ export const Footer: React.FC = () => {
 
         <div className="border-t border-white/10 mt-10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-white/50 text-sm">
-            © {new Date().getFullYear()} Crumbleivable! All rights reserved.
+            © {new Date().getFullYear()} Crumbleivable! {t("footer.rights")}.
           </p>
           <p className="text-white/50 text-xs">
             Made with 💗 in Wahran

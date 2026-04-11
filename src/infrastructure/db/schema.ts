@@ -84,6 +84,8 @@ export const orderItems = pgTable("order_items", {
   productId: uuid("product_id").notNull(),
   productType: productTypeEnum("product_type").notNull(),
   productName: varchar("product_name", { length: 255 }).notNull(),
+  productSlug: varchar("product_slug", { length: 255 }).notNull(),
+  productImage: varchar("product_image", { length: 500 }),
   quantity: integer("quantity").notNull(),
   priceSnapshot: integer("price_snapshot").notNull(),
 });

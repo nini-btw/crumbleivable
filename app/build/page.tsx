@@ -13,18 +13,24 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { openCart, addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 import type { Product, CookiePiece } from "@/domain/entities/product";
-
-const steps = ["Choose Cookies", "Review Box", "Add to Cart"];
 
 export default function BuildPage() {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [cookies, setCookies] = useState<CookiePiece[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedCookies, setSelectedCookies] = useState<
     { cookie: Product; quantity: number }[]
   >([]);
+
+  const steps = [
+    t("build.selectSize"),
+    t("build.yourBox"),
+    t("cart.checkout")
+  ];
 
   // Fetch cookies from API
   useEffect(() => {
@@ -68,7 +74,7 @@ export default function BuildPage() {
       dispatch(addItem({ product: cookie, quantity }));
     });
     dispatch(openCart());
-    dispatch(addToast({ message: "Box added to cart!", type: "success" }));
+    dispatch(addToast({ message: t("product.added"), type: "success" }));
   };
 
   const canProceed = selectedCookies.length > 0 && totalCookies >= 3;
@@ -76,7 +82,7 @@ export default function BuildPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-[#A07850]">Loading cookies...</div>
+        <div className="text-[#A07850]">{t("common.loading")}</div>
       </div>
     );
   }
@@ -86,10 +92,9 @@ export default function BuildPage() {
       {/* Header */}
       <section className="bg-[#F0E6D6]/30 py-12">
         <div className="mx-auto w-full max-w-[1400px] px-4 sm:px-8 lg:px-12">
-          <h1 className="font-display text-[#2C1810] mb-4 text-4xl sm:text-5xl">Build Your Box</h1>
+          <h1 className="font-display text-[#2C1810] mb-4 text-4xl sm:text-5xl">{t("build.title")}</h1>
           <p className="text-[#A07850] max-w-xl">
-            Create your perfect box by selecting 3 or more cookies. Mix and match to your
-            heart&apos;s content!
+            {t("build.subtitle")}
           </p>
         </div>
       </section>
@@ -116,10 +121,10 @@ export default function BuildPage() {
                 <div className="mb-8 rounded-2xl border border-[#F4538A]/20 bg-[#FFF0F5] p-4">
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-[#5C3D2E] font-medium">
-                      {totalCookies} / 3 cookies selected
+                      {totalCookies} / 3 {t("common.quantity").toLowerCase()}
                     </span>
                     <span className="font-bold text-[#F4538A]">
-                      {totalCookies >= 3 ? "✓ Ready!" : `${3 - totalCookies} more needed`}
+                      {totalCookies >= 3 ? "✓ " + t("checkout.success") : `${3 - totalCookies} ${t("build.pieces")}`}
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-[#F4538A]/10">
@@ -175,7 +180,7 @@ export default function BuildPage() {
                     disabled={!canProceed}
                     className="group cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
                   >
-                    Review Box
+                    {t("common.continue")}
                     <ChevronRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </div>
@@ -192,7 +197,7 @@ export default function BuildPage() {
               >
                 <div className="mx-auto max-w-2xl">
                   <h2 className="font-display text-[#2C1810] mb-6 text-center text-2xl">
-                    Your Custom Box
+                    {t("build.yourBox")}
                   </h2>
 
                   <div className="space-y-4 rounded-3xl bg-white p-6 shadow-[0_2px_12px_rgba(44,24,16,0.08)]">
@@ -226,7 +231,7 @@ export default function BuildPage() {
 
                     <div className="border-[#E8D5C0] border-t pt-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-[#5C3D2E]">{totalCookies} cookies</span>
+                        <span className="text-[#5C3D2E]">{totalCookies} {t("common.quantity").toLowerCase()}</span>
                         <span className="text-[#2C1810] text-2xl font-extrabold tabular-nums">
                           {formatPrice(totalPrice)}
                         </span>
@@ -241,13 +246,13 @@ export default function BuildPage() {
                       className="cursor-pointer"
                     >
                       <ChevronLeftIcon className="mr-2 h-4 w-4" />
-                      Back
+                      {t("common.back")}
                     </Button>
                     <Button 
                       onClick={() => setCurrentStep(2)} 
                       className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
                     >
-                      Continue
+                      {t("common.continue")}
                       <ChevronRightIcon className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -268,9 +273,9 @@ export default function BuildPage() {
                   <ShoppingBagIcon className="h-12 w-12 text-[#F4538A]" />
                 </div>
 
-                <h2 className="font-display text-[#2C1810] mb-4 text-3xl">Ready to Order?</h2>
+                <h2 className="font-display text-[#2C1810] mb-4 text-3xl">{t("checkout.title")}</h2>
 
-                <p className="text-[#5C3D2E] mb-2">Your custom box with {totalCookies} cookies</p>
+                <p className="text-[#5C3D2E] mb-2">{t("build.yourBox")}: {totalCookies} {t("common.quantity").toLowerCase()}</p>
                 <p className="mb-8 text-2xl font-extrabold text-[#F4538A] tabular-nums">
                   {formatPrice(totalPrice)}
                 </p>
@@ -282,7 +287,7 @@ export default function BuildPage() {
                     onClick={handleAddToCart} 
                     className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]"
                   >
-                    Add to Cart
+                    {t("shop.addToCart")}
                   </Button>
                   <Button
                     variant="ghost"
@@ -290,7 +295,7 @@ export default function BuildPage() {
                     onClick={() => setCurrentStep(1)}
                     className="cursor-pointer"
                   >
-                    Go Back
+                    {t("common.back")}
                   </Button>
                 </div>
               </motion.div>

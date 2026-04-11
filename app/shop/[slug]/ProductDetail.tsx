@@ -13,6 +13,7 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 // Map product slugs to image filenames (same as ProductCard)
 const getProductImage = (slug: string): string => {
@@ -39,6 +40,7 @@ const getProductImage = (slug: string): string => {
  */
 export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const [quantity, setQuantity] = React.useState(1);
 
   const isCookie = product.type === "cookie";
@@ -52,7 +54,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
     if (isCookie && cookie?.isSoldOut) {
       dispatch(
         addToast({
-          message: "This cookie is sold out",
+          message: t("shop.soldOut"),
           type: "error",
         })
       );
@@ -62,7 +64,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
     dispatch(addItem({ product, quantity }));
     dispatch(
       addToast({
-        message: `${quantity}x ${product.name} added to cart!`,
+        message: `${quantity}x ${product.name} ${t("product.added")}`,
         type: "success",
       })
     );
@@ -70,7 +72,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
   };
 
   return (
-    <div className="grid gap-12 lg:grid-cols-2">
+    <div className="my-4 grid gap-12 lg:grid-cols-2">
       {/* Images */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
@@ -83,12 +85,12 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
           <Image src={mainImage} alt={product.name} fill className="object-cover" priority />
           {isCookie && cookie?.isNew && (
             <div className="absolute top-4 left-4">
-              <Badge variant="new">New</Badge>
+              <Badge variant="new">{t("shop.new")}</Badge>
             </div>
           )}
           {isCookie && cookie?.isSoldOut && (
             <div className="absolute top-4 left-4">
-              <Badge variant="soldOut">Sold Out</Badge>
+              <Badge variant="soldOut">{t("shop.soldOut")}</Badge>
             </div>
           )}
         </div>
@@ -99,7 +101,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
         {/* Type badge */}
         <div>
           <Badge variant="outline" className="mb-4">
-            {isCookie ? "Single Cookie" : "Cookie Box"}
+            {isCookie ? t("shop.filters.cookies") : t("shop.filters.boxes")}
           </Badge>
           <h1 className="font-display text-brown-900 text-4xl sm:text-5xl">{product.name}</h1>
         </div>
@@ -119,7 +121,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
             {cookie.allergens.length > 0 && (
               <div>
                 <h3 className="text-brown-400 mb-3 text-xs font-bold tracking-widest uppercase">
-                  Allergens
+                  {t("product.allergens")}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {cookie.allergens.map((allergen) => (
@@ -140,7 +142,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
         {!isCookie && box && (
           <div>
             <h3 className="text-brown-400 mb-3 text-xs font-bold tracking-widest uppercase">
-              Includes
+              {t("product.ingredients")}
             </h3>
             <ul className="space-y-2">
               {box.includedCookies.map((item, index) => (
@@ -151,7 +153,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
               ))}
             </ul>
             <p className="mt-3 text-sm text-pink-500">
-              This box counts as 3 cookies toward your minimum
+              {t("build.subtitle")}
             </p>
           </div>
         )}
@@ -159,7 +161,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
         {/* Quantity & Add to Cart */}
         <div className="border-brown-100 space-y-4 border-t pt-6">
           <div className="flex items-center gap-4">
-            <span className="text-brown-700 text-sm font-semibold">Quantity:</span>
+            <span className="text-brown-700 text-sm font-semibold">{t("product.quantity")}:</span>
             <QuantityStepper
               value={quantity}
               onChange={setQuantity}
@@ -174,13 +176,13 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
             onClick={handleAddToCart}
             disabled={isCookie && cookie?.isSoldOut}
           >
-            {isCookie && cookie?.isSoldOut ? "Sold Out" : "Add to Box"}
+            {isCookie && cookie?.isSoldOut ? t("shop.soldOut") : t("shop.addToCart")}
           </Button>
         </div>
 
         {/* Note */}
         <p className="text-brown-400 text-sm">
-          Minimum 3 cookies required for checkout. Free delivery in Oran.
+          {t("build.completeSelection")}. {t("common.free")} {t("common.delivery")}.
         </p>
       </motion.div>
     </div>

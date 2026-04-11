@@ -20,9 +20,11 @@ import { QuantityStepper } from "@/presentation/components/ui/QuantityStepper";
 import { Button } from "@/presentation/components/ui/Button";
 import { formatPrice } from "@/presentation/lib/utils";
 import { slideInRight, fadeOverlay } from "@/presentation/lib/animations";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
 
 export const CartDrawer: React.FC = () => {
   const dispatch = useDispatch();
+  const { t } = useTranslation();
   const isOpen = useSelector(selectCartOpen);
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
@@ -86,7 +88,7 @@ export const CartDrawer: React.FC = () => {
             className="absolute top-0 right-0 bottom-0 flex w-full max-w-md flex-col bg-[#FDF6EE] shadow-2xl"
           >
             <div className="flex items-center justify-between border-b border-[#E8D5C0] p-5">
-              <h2 className="font-display text-2xl text-[#2C1810]">Your Box</h2>
+              <h2 className="font-display text-2xl text-[#2C1810]">{t("cart.title")}</h2>
               <button
                 onClick={() => dispatch(closeCart())}
                 className="cursor-pointer rounded-full p-2 transition-colors hover:bg-[#FFF0F5]"
@@ -100,8 +102,8 @@ export const CartDrawer: React.FC = () => {
               {items.length === 0 ? (
                 <div className="flex h-full flex-col items-center justify-center text-center">
                   <ShoppingBagIcon className="mb-4 h-16 w-16 text-[#E8D5C0]" />
-                  <p className="text-[#A07850]">Your box is empty</p>
-                  <p className="mt-1 text-sm text-[#A07850]">Add some cookies to get started!</p>
+                  <p className="text-[#A07850]">{t("cart.empty")}</p>
+                  <p className="mt-1 text-sm text-[#A07850]">{t("home.features.fresh.desc")}</p>
                 </div>
               ) : (
                 items.map((item) => (
@@ -155,8 +157,7 @@ export const CartDrawer: React.FC = () => {
             {!canCheckout && items.length > 0 && (
               <div className="mx-5 mb-3 rounded-2xl border border-[#FFD6E7] bg-[#FFF0F5] p-4">
                 <p className="text-center text-sm font-medium text-[#5C3D2E]">
-                  Add {cookiesNeeded} more cookie
-                  {cookiesNeeded !== 1 ? "s" : ""} to unlock checkout 🍪
+                  {t("build.completeSelection")}: {cookiesNeeded} 🍪
                 </p>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#FFD6E7]">
                   <motion.div
@@ -171,7 +172,7 @@ export const CartDrawer: React.FC = () => {
 
             <div className="space-y-3 border-t border-[#E8D5C0] p-5">
               <div className="flex justify-between text-lg font-bold text-[#2C1810]">
-                <span>Total</span>
+                <span>{t("common.total")}</span>
                 <span>{formatPrice(total)}</span>
               </div>
               <Link href="/cart" onClick={() => dispatch(closeCart())}>
@@ -181,7 +182,7 @@ export const CartDrawer: React.FC = () => {
                   disabled={!canCheckout && items.length > 0}
                   className="cursor-pointer"
                 >
-                  {canCheckout ? "Proceed to Checkout" : `Add ${cookiesNeeded} more`}
+                  {canCheckout ? t("cart.checkout") : `${t("build.completeSelection")} (${cookiesNeeded})`}
                 </Button>
               </Link>
             </div>

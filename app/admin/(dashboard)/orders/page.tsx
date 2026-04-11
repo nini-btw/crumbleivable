@@ -21,6 +21,27 @@ import {
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import type { Order } from "@/domain/entities/order";
+import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import Image from "next/image";
+
+// Product image mapping
+const getProductImage = (slug: string, image?: string): string => {
+  if (image) return image;
+  const imageMap: Record<string, string> = {
+    chocoShips: "/images/chocoShips.png",
+    mm: "/images/mm.png",
+    pistash: "/images/pistash.png",
+    viola: "/images/viola.png",
+    peanut: "/images/peanut.png",
+    ben10: "/images/ben10.png",
+    lotus: "/images/lotus.png",
+    strawbery: "/images/strawbery.png",
+    bueno: "/images/bueno.png",
+    kinder: "/images/kinder.png",
+    tiramisu: "/images/tiramisu.png",
+  };
+  return imageMap[slug] || "/images/bueno.png";
+};
 
 type SortField = "id" | "customer" | "total" | "status" | "date";
 type SortDirection = "asc" | "desc";
@@ -33,15 +54,6 @@ const statusColors: Record<string, string> = {
   delivered: "bg-green-100 text-green-800 border-green-200",
   cancelled: "bg-red-100 text-red-800 border-red-200",
 };
-
-const statusOptions = [
-  { value: "pending", label: "Pending" },
-  { value: "confirmed", label: "Confirmed" },
-  { value: "preparing", label: "Preparing" },
-  { value: "ready", label: "Ready" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-];
 
 // Stats Card Component
 function StatCard({ 
@@ -74,7 +86,8 @@ function StatCard({
 }
 
 // Status Distribution Chart
-function StatusChart({ orders }: { orders: Order[] }) {
+function StatusChart({ orders, t }: { orders: Order[]; t: (key: string) => string }) {
+  const statusOptions = ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"];
   const statusCounts = orders.reduce((acc, order) => {
     acc[order.status] = (acc[order.status] || 0) + 1;
     return acc;
@@ -87,28 +100,28 @@ function StatusChart({ orders }: { orders: Order[] }) {
     <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
       <h3 className="font-bold text-[#2C1810] text-lg mb-4 flex items-center gap-2">
         <BarChart3Icon className="w-5 h-5 text-[#F4538A]" />
-        Order Status Distribution
+        {t('admin.orders.status')}
       </h3>
       <div className="space-y-3">
         {statusOptions.map((status) => {
-          const count = statusCounts[status.value] || 0;
+          const count = statusCounts[status] || 0;
           const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
           const barWidth = maxCount > 0 ? (count / maxCount) * 100 : 0;
 
           return (
-            <div key={status.value}>
+            <div key={status}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="font-medium text-[#2C1810]">{status.label}</span>
+                <span className="font-medium text-[#2C1810]">{t(`admin.orders.statusLabels.${status}`)}</span>
                 <span className="text-[#A07850]">{count} ({percentage}%)</span>
               </div>
               <div className="h-2.5 bg-[#F0E6D6] rounded-full overflow-hidden">
                 <div 
                   className={`h-full rounded-full transition-all duration-500 ${
-                    status.value === "delivered" ? "bg-green-500" :
-                    status.value === "cancelled" ? "bg-red-400" :
-                    status.value === "pending" ? "bg-yellow-400" :
-                    status.value === "confirmed" ? "bg-blue-400" :
-                    status.value === "preparing" ? "bg-purple-400" :
+                    status === "delivered" ? "bg-green-500" :
+                    status === "cancelled" ? "bg-red-400" :
+                    status === "pending" ? "bg-yellow-400" :
+                    status === "confirmed" ? "bg-blue-400" :
+                    status === "preparing" ? "bg-purple-400" :
                     "bg-indigo-400"
                   }`}
                   style={{ width: `${barWidth}%` }}
@@ -123,7 +136,7 @@ function StatusChart({ orders }: { orders: Order[] }) {
 }
 
 // Weekly Revenue Chart
-function WeeklyRevenueChart({ orders }: { orders: Order[] }) {
+function WeeklyRevenueChart({ orders, t }: { orders: Order[]; t: (key: string) => string }) {
   const last7Days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (6 - i));
@@ -149,9 +162,9 @@ function WeeklyRevenueChart({ orders }: { orders: Order[] }) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-[#2C1810] text-lg flex items-center gap-2">
           <TrendingUpIcon className="w-5 h-5 text-[#F4538A]" />
-          Weekly Revenue
+          {t('admin.dashboard.revenue')}
         </h3>
-        <span className="text-lg font-bold text-[#2C1810]">{totalWeekRevenue.toLocaleString()} DA</span>
+        <span className="text-lg font-bold text-[#2C1810]">{totalWeekRevenue.toLocaleString()} {t('common.currency')}</span>
       </div>
       <div className="flex items-end gap-2 h-32">
         {dailyRevenue.map((revenue, i) => {
@@ -162,7 +175,7 @@ function WeeklyRevenueChart({ orders }: { orders: Order[] }) {
                 <div 
                   className="w-full max-w-8 bg-[#F4538A] rounded-t-lg transition-all duration-500 hover:bg-[#D63A72]"
                   style={{ height: `${height}%` }}
-                  title={`${revenue} DA`}
+                  title={`${revenue} ${t('common.currency')}`}
                 />
               </div>
               <span className="text-[10px] text-[#A07850]">{formatDate(last7Days[i])}</span>
@@ -181,14 +194,17 @@ function OrderDetailSidebar({
   onClose,
   onStatusChange,
   onDelete,
+  t,
 }: {
   order: Order | null;
   isOpen: boolean;
   onClose: () => void;
   onStatusChange: (id: string, status: Order["status"]) => void;
   onDelete: (id: string) => void;
+  t: (key: string) => string;
 }) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const statusOptions = ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"];
 
   if (!isOpen || !order) return null;
 
@@ -207,7 +223,7 @@ function OrderDetailSidebar({
       <div className="fixed right-0 top-0 h-full w-full sm:w-[480px] bg-white shadow-2xl z-50 overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-[#E8D5C0] p-4 sm:p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold text-[#2C1810]">Order Details</h2>
+            <h2 className="text-xl font-bold text-[#2C1810]">{t('admin.orders.orderDetails.title')}</h2>
             <p className="text-sm text-[#A07850]">#{order.id.slice(0, 8).toUpperCase()}</p>
           </div>
           <button 
@@ -219,33 +235,35 @@ function OrderDetailSidebar({
         </div>
 
         <div className="p-4 sm:p-6 space-y-6">
+          {/* Status Section */}
           <div className="bg-[#F0E6D6]/30 rounded-2xl p-4">
             <h3 className="text-sm font-bold uppercase tracking-widest text-[#A07850] mb-3 flex items-center gap-2">
               <ClockIcon className="w-4 h-4" />
-              Order Status
+              {t('admin.orders.orderDetails.status')}
             </h3>
             <div className="flex flex-wrap gap-2">
               {statusOptions.map((status) => (
                 <button
-                  key={status.value}
-                  onClick={() => handleStatusChange(status.value as Order["status"])}
-                  disabled={isUpdating || order.status === status.value}
+                  key={status}
+                  onClick={() => handleStatusChange(status as Order["status"])}
+                  disabled={isUpdating || order.status === status}
                   className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
-                    order.status === status.value
-                      ? statusColors[status.value]
+                    order.status === status
+                      ? statusColors[status]
                       : "bg-white border-[#E8D5C0] text-[#5C3D2E] hover:border-[#F4538A]"
                   } ${isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                 >
-                  {status.label}
+                  {t(`admin.orders.statusLabels.${status}`)}
                 </button>
               ))}
             </div>
           </div>
 
+          {/* Customer Info */}
           <div>
             <h3 className="text-sm font-bold uppercase tracking-widest text-[#A07850] mb-3 flex items-center gap-2">
               <UserIcon className="w-4 h-4" />
-              Customer
+              {t('admin.orders.orderDetails.customerInfo')}
             </h3>
             <div className="bg-white border border-[#E8D5C0] rounded-2xl p-4 space-y-3">
               <div className="flex items-start gap-3">
@@ -265,10 +283,11 @@ function OrderDetailSidebar({
             </div>
           </div>
 
+          {/* Order Items */}
           <div>
             <h3 className="text-sm font-bold uppercase tracking-widest text-[#A07850] mb-3 flex items-center gap-2">
               <PackageIcon className="w-4 h-4" />
-              Items ({order.items.length})
+              {t('admin.orders.orderDetails.items')} ({order.items.length})
             </h3>
             <div className="space-y-2">
               {order.items.map((item, index) => (
@@ -277,8 +296,13 @@ function OrderDetailSidebar({
                   className="flex items-center justify-between bg-white border border-[#E8D5C0] rounded-xl p-3"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#FFF0F5] rounded-lg flex items-center justify-center text-lg">
-                      🍪
+                    <div className="relative w-12 h-12 bg-[#FFF0F5] rounded-lg overflow-hidden flex-shrink-0">
+                      <Image
+                        src={getProductImage(item.productSlug, item.productImage)}
+                        alt={item.productName}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                     <div>
                       <p className="font-medium text-[#2C1810] text-sm">{item.productName}</p>
@@ -287,28 +311,29 @@ function OrderDetailSidebar({
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-[#2C1810]">x{item.quantity}</p>
-                    <p className="text-xs text-[#A07850]">{item.priceSnapshot} DA</p>
+                    <p className="text-xs text-[#A07850]">{item.priceSnapshot} {t('common.currency')}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
+          {/* Notes */}
           {(order.cookingNote || order.giftNote) && (
             <div>
               <h3 className="text-sm font-bold uppercase tracking-widest text-[#A07850] mb-3">
-                Notes
+                {t('admin.orders.orderDetails.notes')}
               </h3>
               <div className="space-y-2">
                 {order.cookingNote && (
                   <div className="bg-yellow-50 border border-yellow-100 rounded-xl p-3">
-                    <p className="text-xs font-medium text-yellow-700 mb-1">Cooking Note:</p>
+                    <p className="text-xs font-medium text-yellow-700 mb-1">{t('admin.orders.orderDetails.cookingNote')}:</p>
                     <p className="text-sm text-yellow-800">{order.cookingNote}</p>
                   </div>
                 )}
                 {order.giftNote && (
                   <div className="bg-pink-50 border border-pink-100 rounded-xl p-3">
-                    <p className="text-xs font-medium text-pink-700 mb-1">Gift Note:</p>
+                    <p className="text-xs font-medium text-pink-700 mb-1">{t('admin.orders.orderDetails.giftNote')}:</p>
                     <p className="text-sm text-pink-800">{order.giftNote}</p>
                   </div>
                 )}
@@ -316,32 +341,35 @@ function OrderDetailSidebar({
             </div>
           )}
 
+          {/* Order Summary */}
           <div className="bg-[#2C1810] rounded-2xl p-4 text-white">
             <div className="flex justify-between items-center mb-2">
-              <span className="text-white/70">Subtotal</span>
-              <span>{order.totalAmount} DA</span>
+              <span className="text-white/70">{t('admin.orders.orderDetails.subtotal')}</span>
+              <span>{order.totalAmount} {t('common.currency')}</span>
             </div>
             <div className="flex justify-between items-center mb-3">
-              <span className="text-white/70">Delivery</span>
-              <span className="text-green-400">Free</span>
+              <span className="text-white/70">{t('common.delivery')}</span>
+              <span className="text-green-400">{t('common.free')}</span>
             </div>
             <div className="border-t border-white/20 pt-3 flex justify-between items-center">
-              <span className="font-bold">Total</span>
-              <span className="text-2xl font-bold">{order.totalAmount} DA</span>
+              <span className="font-bold">{t('admin.orders.orderDetails.total')}</span>
+              <span className="text-2xl font-bold">{order.totalAmount} {t('common.currency')}</span>
             </div>
           </div>
 
+          {/* Order Date */}
           <div className="flex items-center gap-2 text-sm text-[#A07850]">
             <CalendarIcon className="w-4 h-4" />
-            <span>Ordered on {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}</span>
+            <span>{t('admin.orders.orderDetails.orderedOn')} {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString()}</span>
           </div>
 
+          {/* Delete Button */}
           <div className="pt-4 border-t border-[#E8D5C0]">
             <Button
               variant="ghost"
               fullWidth
               onClick={() => {
-                if (confirm("Are you sure you want to delete this order?")) {
+                if (confirm(t('admin.common.confirm'))) {
                   onDelete(order.id);
                   onClose();
                 }
@@ -349,7 +377,7 @@ function OrderDetailSidebar({
               className="text-red-500 hover:bg-red-50"
             >
               <Trash2Icon className="w-4 h-4 mr-2" />
-              Delete Order
+              {t('admin.orders.orderDetails.deleteOrder')}
             </Button>
           </div>
         </div>
@@ -362,11 +390,13 @@ function OrderDetailSidebar({
 function OrderCard({ 
   order, 
   onView, 
-  onDelete 
+  onDelete,
+  t 
 }: { 
   order: Order; 
   onView: () => void;
   onDelete: () => void;
+  t: (key: string) => string;
 }) {
   return (
     <div className="bg-white border border-[#E8D5C0] rounded-2xl p-4 space-y-3">
@@ -378,7 +408,7 @@ function OrderCard({
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
           statusColors[order.status] || "bg-gray-100 text-gray-800 border-gray-200"
         }`}>
-          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+          {t(`admin.orders.statusLabels.${order.status}`)}
         </span>
       </div>
       
@@ -393,7 +423,7 @@ function OrderCard({
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-[#F0E6D6]">
-        <p className="font-bold text-[#2C1810]">{order.totalAmount} DA</p>
+        <p className="font-bold text-[#2C1810]">{order.totalAmount} {t('common.currency')}</p>
         <div className="flex gap-2">
           <button
             onClick={onView}
@@ -420,6 +450,7 @@ export default function AdminOrdersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { t, isRTL } = useTranslation();
 
   useEffect(() => {
     async function fetchOrders() {
@@ -507,11 +538,11 @@ export default function AdminOrdersPage() {
           setSelectedOrder({ ...selectedOrder, status });
         }
       } else {
-        alert(result.error || "Failed to update status");
+        alert(result.error || t('common.error'));
       }
     } catch (error) {
       console.error("Failed to update status:", error);
-      alert("Failed to update status");
+      alert(t('common.error'));
     }
   };
 
@@ -526,11 +557,11 @@ export default function AdminOrdersPage() {
         setOrders(orders.filter(o => o.id !== id));
         setIsSidebarOpen(false);
       } else {
-        alert(result.error || "Failed to delete order");
+        alert(result.error || t('common.error'));
       }
     } catch (error) {
       console.error("Failed to delete order:", error);
-      alert("Failed to delete order");
+      alert(t('common.error'));
     }
   };
 
@@ -556,44 +587,44 @@ export default function AdminOrdersPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="font-display text-3xl text-[#2C1810]">Orders</h1>
-          <p className="text-[#A07850] mt-1">Loading orders...</p>
+          <h1 className="font-display text-3xl text-[#2C1810]">{t('admin.orders.title')}</h1>
+          <p className="text-[#A07850] mt-1">{t('common.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-8" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div>
-        <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">Orders</h1>
-        <p className="text-[#A07850] mt-1">Manage customer orders</p>
+        <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">{t('admin.orders.title')}</h1>
+        <p className="text-[#A07850] mt-1">{t('admin.orders.subtitle')}</p>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard 
-          title="Total Orders" 
+          title={t('admin.orders.stats.total')} 
           value={stats.total} 
           icon={ShoppingBagIcon} 
           color="bg-[#F4538A]"
           trend={`${stats.todayOrders} today`}
         />
         <StatCard 
-          title="Revenue" 
-          value={`${stats.totalRevenue.toLocaleString()} DA`} 
+          title={t('admin.orders.stats.revenue')} 
+          value={`${stats.totalRevenue.toLocaleString()} ${t('common.currency')}`} 
           icon={DollarSignIcon} 
           color="bg-green-500"
         />
         <StatCard 
-          title="Pending" 
+          title={t('admin.orders.stats.pending')} 
           value={stats.pending} 
           icon={ClockIcon} 
           color="bg-yellow-500"
         />
         <StatCard 
-          title="Delivered" 
+          title={t('admin.orders.stats.delivered')} 
           value={stats.delivered} 
           icon={TrendingUpIcon} 
           color="bg-blue-500"
@@ -602,13 +633,13 @@ export default function AdminOrdersPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <StatusChart orders={orders} />
-        <WeeklyRevenueChart orders={orders} />
+        <StatusChart orders={orders} t={t} />
+        <WeeklyRevenueChart orders={orders} t={t} />
       </div>
 
       {/* Orders Section */}
       <div className="space-y-4">
-        <h2 className="font-bold text-[#2C1810] text-lg">All Orders</h2>
+        <h2 className="font-bold text-[#2C1810] text-lg">{t('admin.dashboard.recentOrders')}</h2>
         
         {/* Desktop Table */}
         <div className="hidden sm:block bg-white rounded-3xl border border-[#E8D5C0] overflow-hidden">
@@ -616,13 +647,13 @@ export default function AdminOrdersPage() {
             <table className="w-full text-sm">
               <thead className="bg-[#F0E6D6]/50">
                 <tr>
-                  <SortHeader field="id">Order</SortHeader>
-                  <SortHeader field="customer">Customer</SortHeader>
-                  <SortHeader field="total">Total</SortHeader>
-                  <SortHeader field="status">Status</SortHeader>
-                  <SortHeader field="date">Date</SortHeader>
+                  <SortHeader field="id">{t('admin.orders.orderId')}</SortHeader>
+                  <SortHeader field="customer">{t('admin.orders.customer')}</SortHeader>
+                  <SortHeader field="total">{t('admin.orders.total')}</SortHeader>
+                  <SortHeader field="status">{t('admin.orders.status')}</SortHeader>
+                  <SortHeader field="date">{t('admin.orders.date')}</SortHeader>
                   <th className="px-3 sm:px-6 py-3 text-right text-xs font-bold uppercase tracking-widest text-[#A07850]">
-                    Actions
+                    {t('admin.orders.actions')}
                   </th>
                 </tr>
               </thead>
@@ -641,7 +672,7 @@ export default function AdminOrdersPage() {
                       </div>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-[#2C1810] tabular-nums">
-                      {order.totalAmount} DA
+                      {order.totalAmount} {t('common.currency')}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span
@@ -649,7 +680,7 @@ export default function AdminOrdersPage() {
                           statusColors[order.status] || "bg-gray-100 text-gray-800 border-gray-200"
                         }`}
                       >
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                        {t(`admin.orders.statusLabels.${order.status}`)}
                       </span>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 text-[#A07850] text-sm">
@@ -660,14 +691,14 @@ export default function AdminOrdersPage() {
                         <button
                           onClick={() => handleViewOrder(order)}
                           className="p-2 hover:bg-[#F0E6D6] rounded-lg transition-colors cursor-pointer"
-                          title="View Details"
+                          title={t('admin.orders.view')}
                         >
                           <EyeIcon className="w-4 h-4 text-[#A07850]" />
                         </button>
                         <button
                           onClick={() => handleDelete(order.id)}
                           className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete"
+                          title={t('admin.orders.delete')}
                         >
                           <Trash2Icon className="w-4 h-4 text-red-400" />
                         </button>
@@ -680,7 +711,7 @@ export default function AdminOrdersPage() {
           </div>
           {orders.length === 0 && (
             <div className="p-8 text-center text-[#A07850]">
-              No orders yet.
+              {t('admin.orders.noOrders')}
             </div>
           )}
         </div>
@@ -693,15 +724,16 @@ export default function AdminOrdersPage() {
               order={order}
               onView={() => handleViewOrder(order)}
               onDelete={() => {
-                if (confirm("Are you sure you want to delete this order?")) {
+                if (confirm(t('admin.common.confirm'))) {
                   handleDelete(order.id);
                 }
               }}
+              t={t}
             />
           ))}
           {orders.length === 0 && (
             <div className="p-8 text-center text-[#A07850] bg-white rounded-3xl border border-[#E8D5C0]">
-              No orders yet.
+              {t('admin.orders.noOrders')}
             </div>
           )}
         </div>
@@ -714,6 +746,7 @@ export default function AdminOrdersPage() {
         onClose={() => setIsSidebarOpen(false)}
         onStatusChange={handleStatusChange}
         onDelete={handleDelete}
+        t={t}
       />
     </div>
   );

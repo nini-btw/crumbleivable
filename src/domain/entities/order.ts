@@ -42,6 +42,8 @@ export interface OrderItem {
   productId: string;
   productType: "cookie" | "box";
   productName: string;
+  productSlug: string;
+  productImage?: string;
   quantity: number;
   priceSnapshot: number;
 }
