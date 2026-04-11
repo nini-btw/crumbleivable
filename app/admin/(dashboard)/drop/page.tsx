@@ -7,69 +7,8 @@ import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
 import type { CookiePiece, Product } from "@/domain/entities/product";
 import type { WeeklyDrop } from "@/domain/entities/drop";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
-
-// Countdown Timer Component
-function CountdownTimer({ targetDate, t }: { targetDate: Date; t: (key: string) => string }) {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [isExpired, setIsExpired] = useState(false);
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const target = new Date(targetDate).getTime();
-      const diff = target - now;
-
-      if (diff <= 0) {
-        setIsExpired(true);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
-      }
-
-      setIsExpired(false);
-      setTimeLeft({
-        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((diff % (1000 * 60)) / 1000),
-      });
-    };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(timer);
-  }, [targetDate]);
-
-  if (isExpired) {
-    return (
-      <div className="text-center py-4">
-        <span className="text-[#F4538A] font-bold text-lg">{t('admin.drop.dropLive')}</span>
-      </div>
-    );
-  }
-
-  const timeUnits = [
-    { value: timeLeft.days, label: t('home.hero.days') || "Days" },
-    { value: timeLeft.hours, label: t('home.hero.hours') || "Hours" },
-    { value: timeLeft.minutes, label: t('home.hero.mins') || "Mins" },
-    { value: timeLeft.seconds, label: t('home.hero.secs') || "Secs" },
-  ];
-
-  return (
-    <div className="inline-flex items-center gap-2 sm:gap-4">
-      {timeUnits.map((unit) => (
-        <div key={unit.label} className="text-center">
-          <div className="bg-[#2C1810] font-display flex h-12 w-12 items-center justify-center rounded-2xl text-xl text-white tabular-nums sm:h-16 sm:w-16 sm:text-3xl">
-            {String(unit.value).padStart(2, "0")}
-          </div>
-          <span className="text-[#5C3D2E] mt-1 block text-[10px] font-bold tracking-widest uppercase">
-            {unit.label}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
+import { useTranslations, useLocale } from 'next-intl';
+import { CountdownTimer } from "@/presentation/components/features/CountdownTimer";
 
 // Active Drop Card Component
 function ActiveDropCard({ 
@@ -111,7 +50,7 @@ function ActiveDropCard({
             {isRevealed ? t('admin.drop.revealed') : t('admin.drop.countdownPreview')}
           </span>
         </div>
-        <CountdownTimer targetDate={scheduledDate} t={t} />
+        <CountdownTimer targetDate={scheduledDate} size="sm" />
       </div>
 
       {product && (
@@ -170,7 +109,9 @@ export default function AdminDropPage() {
   const [scheduledTime, setScheduledTime] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Prepare cookie options for Select
   const cookieOptions = cookies.map((cookie) => ({
@@ -393,7 +334,7 @@ export default function AdminDropPage() {
                 <ClockIcon className="w-4 h-4" />
                 <span className="text-xs font-bold tracking-widest uppercase">{t('admin.drop.countdownPreview')}</span>
               </div>
-              <CountdownTimer targetDate={previewDate} t={t} />
+              <CountdownTimer targetDate={previewDate} size="sm" />
               <p className="text-xs text-[#A07850] mt-4">
                 {t('admin.drop.scheduledFor')} {previewDate.toLocaleString()}
               </p>

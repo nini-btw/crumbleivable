@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 import type { Product } from "@/domain/entities/product";
 
 export default function ShopPage({
@@ -21,7 +21,7 @@ export default function ShopPage({
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   // Sort options
   const sortOptions = [

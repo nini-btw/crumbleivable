@@ -13,7 +13,7 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 // Map product slugs to image filenames (same as ProductCard)
 const getProductImage = (slug: string): string => {
@@ -40,7 +40,7 @@ const getProductImage = (slug: string): string => {
  */
 export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const t = useTranslations();
   const [quantity, setQuantity] = React.useState(1);
 
   const isCookie = product.type === "cookie";

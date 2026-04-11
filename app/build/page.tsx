@@ -13,12 +13,12 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { openCart, addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 import type { Product, CookiePiece } from "@/domain/entities/product";
 
 export default function BuildPage() {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const t = useTranslations();
   const [cookies, setCookies] = useState<CookiePiece[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);

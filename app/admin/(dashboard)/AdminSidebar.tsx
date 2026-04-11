@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/presentation/lib/utils";
 import { logoutAdmin } from "../actions";
-import { AdminLanguageSwitcher } from "@/app/components/LanguageSwitcher";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { LanguageSwitcher } from "@/presentation/components/features/LanguageSwitcher";
+import { useTranslations, useLocale } from 'next-intl';
 
 export const AdminSidebar: React.FC<{
   userEmail: string;
@@ -24,7 +24,9 @@ export const AdminSidebar: React.FC<{
   onClose: () => void;
 }> = ({ userEmail, isOpen, onClose }) => {
   const pathname = usePathname();
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   const navItems = [
     { href: "/admin", icon: LayoutDashboardIcon, labelKey: "admin.sidebar.dashboard" },
@@ -94,7 +96,7 @@ export const AdminSidebar: React.FC<{
         <div className="space-y-2 border-t border-white/10 p-4">
           {/* Language Switch - Desktop Only */}
           <div className="">
-            <AdminLanguageSwitcher />
+            <LanguageSwitcher variant="admin" />
           </div>
 
           {/* User Info */}

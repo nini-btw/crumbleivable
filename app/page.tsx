@@ -8,13 +8,13 @@ import { Button } from "@/presentation/components/ui/Button";
 import { ProductCard } from "@/presentation/components/features/ProductCard";
 import HeroSection from "./HeroSection";
 import CountdownSection from "./CountdownSection";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 import type { Product } from "@/domain/entities/product";
 
 export default function HomePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   useEffect(() => {
     async function fetchProducts() {

@@ -13,7 +13,7 @@ import {
 import type { Order } from "@/domain/entities/order";
 import type { Product } from "@/domain/entities/product";
 import type { VoteCandidate } from "@/domain/entities/vote";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 const statusColors: Record<string, string> = {
   pending: "bg-yellow-100 text-yellow-800",
@@ -71,7 +71,9 @@ export default function AdminDashboardPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [votes, setVotes] = useState<VoteCandidate[]>([]);
   const [loading, setLoading] = useState(true);
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   useEffect(() => {
     async function fetchData() {

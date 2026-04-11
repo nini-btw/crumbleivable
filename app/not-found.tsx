@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { CookieIcon, HomeIcon, SearchIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 export default function NotFoundPage() {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   return (
     <div className="min-h-screen bg-[#FDF6EE] flex flex-col items-center justify-center px-4">

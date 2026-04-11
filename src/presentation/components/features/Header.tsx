@@ -9,10 +9,11 @@ import { toggleCart } from "@/presentation/store/ui/ui.slice";
 import { selectTotalItemCount } from "@/presentation/store/cart/cart.slice";
 import { cn } from "@/presentation/lib/utils";
 import { LanguageSwitcher } from "./LanguageSwitcher";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 export const Header: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
   const dispatch = useDispatch();
   const cartCount = useSelector(selectTotalItemCount);
   const [scrolled, setScrolled] = React.useState(false);

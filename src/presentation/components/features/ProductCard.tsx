@@ -14,7 +14,7 @@ import { addItem } from "@/presentation/store/cart/cart.slice";
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { gridItem } from "@/presentation/lib/animations";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 export interface ProductCardProps {
   product: Product;
@@ -23,7 +23,7 @@ export interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) => {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const t = useTranslations();
   const isBox = product.type === "box";
 
   let badge: string | null = null;

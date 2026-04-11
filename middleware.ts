@@ -1,19 +1,57 @@
 /**
  * Next.js middleware
- * Protects admin routes using Supabase Auth
+ * Handles admin route protection
+ * Note: i18n is handled client-side via next-intl
  */
 
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { locales, defaultLocale } from './i18n.config';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
-export async function middleware(request: NextRequest) {
-  const { pathname, search } = request.nextUrl;
+// List of valid locales
+const validLocales = locales as readonly string[];
+
+// Get locale from request headers or cookie
+function getLocaleFromRequest(request: NextRequest): string {
+  // Check cookie first
+  const localeCookie = request.cookies.get('NEXT_LOCALE')?.value;
+  if (localeCookie && validLocales.includes(localeCookie)) {
+    return localeCookie;
+  }
   
-  // Debug log (remove in production)
-  console.log(`[Middleware] ${pathname}`);
+  // Check Accept-Language header
+  const acceptLanguage = request.headers.get('accept-language');
+  if (acceptLanguage) {
+    const preferredLocale = acceptLanguage
+      .split(',')[0]
+      .split('-')[0]
+      .toLowerCase();
+    if (validLocales.includes(preferredLocale)) {
+      return preferredLocale;
+    }
+  }
+  
+  return defaultLocale;
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  
+  // Create response
+  const response = NextResponse.next();
+  
+  // Detect and set locale
+  const locale = getLocaleFromRequest(request);
+  response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
+  response.headers.set('x-locale', locale);
+  
+  // Skip auth check for non-admin routes
+  if (!pathname.startsWith('/admin')) {
+    return response;
+  }
 
   // Create Supabase client
   const supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -22,42 +60,35 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
-        // No-op in middleware
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
       },
     },
   });
 
   // Check authentication
-  const { data: { user }, error } = await supabase.auth.getUser();
-  
-  console.log(`[Middleware] User: ${user?.email || 'null'}, Error: ${error?.message || 'none'}`);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  // Normalize path - handle both /admin/login and /admin/login/
   const normalizedPath = pathname.replace(/\/$/, '');
   const isLoginPage = normalizedPath === '/admin/login';
-  const isAdminRoute = normalizedPath.startsWith('/admin');
 
   // LOGIN PAGE: Allow unauthenticated, redirect authenticated users to dashboard
   if (isLoginPage) {
     if (user) {
-      console.log('[Middleware] Already logged in, redirecting to /admin');
       return NextResponse.redirect(new URL("/admin", request.url));
     }
-    console.log('[Middleware] On login page, not authenticated - allowing access');
-    return NextResponse.next();
+    return response;
   }
 
   // OTHER ADMIN ROUTES: Require authentication
-  if (isAdminRoute && !user) {
-    console.log('[Middleware] Not authenticated, redirecting to /admin/login');
+  if (!user) {
     return NextResponse.redirect(new URL("/admin/login", request.url));
   }
 
-  // Allow request
-  console.log('[Middleware] Allowing request');
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
-  matcher: ['/admin/:path*'],
+  matcher: ['/((?!_next|api|trpc|\\..*).*)'],
 };

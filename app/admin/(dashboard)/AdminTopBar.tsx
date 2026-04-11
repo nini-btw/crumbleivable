@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { MenuIcon, GlobeIcon } from "lucide-react";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 interface AdminTopBarProps {
   onMenuClick: () => void;
@@ -10,7 +10,8 @@ interface AdminTopBarProps {
 }
 
 export const AdminTopBar: React.FC<AdminTopBarProps> = ({ onMenuClick, userEmail }) => {
-  const { t, locale } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
   const [currentDate, setCurrentDate] = React.useState("");
 
   React.useEffect(() => {

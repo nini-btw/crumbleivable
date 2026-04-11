@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FlameIcon, LockIcon, SparklesIcon } from "lucide-react";
 import { fadeInUp } from "@/presentation/lib/animations";
 import { getTimeRemaining, type TimeRemaining, type WeeklyDrop } from "@/domain/entities/drop";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 const defaultTimeRemaining: TimeRemaining = {
   days: 0,
@@ -113,7 +113,9 @@ export default function CountdownSection() {
   const [timeRemaining, setTimeRemaining] = React.useState<TimeRemaining>(defaultTimeRemaining);
   const [drop, setDrop] = React.useState<WeeklyDrop | null>(null);
   const [loading, setLoading] = React.useState(true);
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   // Fetch current drop from API
   React.useEffect(() => {

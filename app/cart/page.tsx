@@ -53,7 +53,7 @@ import {
 import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Name is required"),
@@ -66,7 +66,7 @@ type CheckoutFormData = z.infer<typeof checkoutSchema>;
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const t = useTranslations();
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);
   const canCheckout = useSelector(selectCanCheckout);

@@ -3,10 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { CookieIcon } from "lucide-react";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 export const Footer: React.FC = () => {
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   const footerLinks = [
     { href: "/shop", label: t("nav.shop") },

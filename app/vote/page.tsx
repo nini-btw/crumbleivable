@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { CheckIcon, TrendingUpIcon, ImageIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import { Badge } from "@/presentation/components/ui/Badge";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 import type { VoteCandidate } from "@/domain/entities/vote";
 import { staggerContainer, gridItem } from "@/presentation/lib/animations";
 
@@ -15,7 +15,7 @@ export default function VotePage() {
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const { t } = useTranslation();
+  const t = useTranslations();
 
   // Fetch candidates from API
   useEffect(() => {

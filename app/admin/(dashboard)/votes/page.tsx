@@ -7,7 +7,7 @@ import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
 import type { Product, CookiePiece } from "@/domain/entities/product";
 import type { VoteCandidate } from "@/domain/entities/vote";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 type ProductFormData = {
   name: string;
@@ -457,7 +457,9 @@ export default function AdminVotesPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [showChart, setShowChart] = useState(true);
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   useEffect(() => {
     async function fetchData() {

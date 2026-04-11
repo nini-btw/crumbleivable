@@ -20,11 +20,11 @@ import { QuantityStepper } from "@/presentation/components/ui/QuantityStepper";
 import { Button } from "@/presentation/components/ui/Button";
 import { formatPrice } from "@/presentation/lib/utils";
 import { slideInRight, fadeOverlay } from "@/presentation/lib/animations";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations } from 'next-intl';
 
 export const CartDrawer: React.FC = () => {
   const dispatch = useDispatch();
-  const { t } = useTranslation();
+  const t = useTranslations();
   const isOpen = useSelector(selectCartOpen);
   const items = useSelector(selectCartItems);
   const total = useSelector(selectCartTotal);

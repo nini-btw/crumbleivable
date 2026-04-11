@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import type { Order } from "@/domain/entities/order";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 import Image from "next/image";
 
 // Product image mapping
@@ -450,7 +450,9 @@ export default function AdminOrdersPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   useEffect(() => {
     async function fetchOrders() {

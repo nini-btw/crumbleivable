@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Comfortaa, Noto_Kufi_Arabic } from "next/font/google";
+import { cookies } from 'next/headers';
 import { Providers } from "./providers";
 import "./globals.css";
+import { locales, defaultLocale } from "../i18n.config";
 
 const comfortaa = Comfortaa({
   subsets: ["latin"],
@@ -42,19 +44,37 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+async function getLocaleAndMessages() {
+  // Read locale from cookie
+  const cookieStore = await cookies();
+  const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
+  
+  const validLocales = locales as readonly string[];
+  const locale = localeCookie && validLocales.includes(localeCookie) 
+    ? localeCookie 
+    : defaultLocale;
+  
+  const messages = (await import(`../messages/${locale}.json`)).default;
+  
+  return { locale, messages };
+}
+
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { locale, messages } = await getLocaleAndMessages();
+  const isRTL = locale === 'ar';
+
   return (
     <html
-      lang="en"
-      dir="ltr"
+      lang={locale}
+      dir={isRTL ? 'rtl' : 'ltr'}
       className={`${comfortaa.variable} ${notoKufiArabic.variable}`}
     >
       <body className="font-body bg-[#FDF6EE] text-[#2C1810] min-h-screen">
-        <Providers>{children}</Providers>
+        <Providers locale={locale} messages={messages}>{children}</Providers>
       </body>
     </html>
   );

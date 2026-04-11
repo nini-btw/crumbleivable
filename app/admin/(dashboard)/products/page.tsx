@@ -18,7 +18,7 @@ import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
 import type { Product, CookiePiece } from "@/domain/entities/product";
 import { isCookiePiece } from "@/domain/entities/product";
-import { useTranslation } from "@/src/presentation/lib/i18n/useTranslation";
+import { useTranslations, useLocale } from 'next-intl';
 
 type SortField = "name" | "price" | "type" | "status";
 type SortDirection = "asc" | "desc";
@@ -37,7 +37,7 @@ function ProductModal({
   onSave: (formData: ProductFormData) => void;
   isSubmitting: boolean;
 }) {
-  const { t } = useTranslation();
+  const t = useTranslations();
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
     slug: "",
@@ -443,7 +443,9 @@ export default function AdminProductsPage() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [searchQuery, setSearchQuery] = useState("");
-  const { t, isRTL } = useTranslation();
+  const t = useTranslations();
+  const locale = useLocale();
+  const isRTL = locale === 'ar';
 
   useEffect(() => {
     async function fetchProducts() {
