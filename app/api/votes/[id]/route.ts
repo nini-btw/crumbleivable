@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { voteRepository } from "@/infrastructure/db/vote.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -17,7 +17,13 @@ interface Params {
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     const { id } = await params;
     await voteRepository.delete(id);
@@ -27,13 +33,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     );
   } catch (error: any) {
     console.error("Failed to delete vote candidate:", error);
-    
-    if (error.message === "NEXT_REDIRECT") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
     
     return NextResponse.json(
       { success: false, error: error.message || "Failed to delete candidate" },

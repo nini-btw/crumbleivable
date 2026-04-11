@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { voteRepository } from "@/infrastructure/db/vote.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 /**
  * POST /api/votes/reset
@@ -13,7 +13,13 @@ import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
  */
 export async function POST() {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     await voteRepository.resetAll();
     
@@ -22,13 +28,6 @@ export async function POST() {
     );
   } catch (error: any) {
     console.error("Failed to reset votes:", error);
-    
-    if (error.message === "NEXT_REDIRECT") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
     
     return NextResponse.json(
       { success: false, error: error.message || "Failed to reset votes" },

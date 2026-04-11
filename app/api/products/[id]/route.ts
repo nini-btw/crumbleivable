@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { productRepository } from "@/infrastructure/db/product.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -45,7 +45,13 @@ export async function GET(request: NextRequest, { params }: Params) {
  */
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     const { id } = await params;
     const body = await request.json();
@@ -58,10 +64,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
   } catch (error: any) {
     console.error("Failed to update product:", error);
     
-    if (error.message === "NEXT_REDIRECT") {
+    // Check for unique constraint violation (duplicate slug)
+    if (error.message?.includes("unique constraint") || error.code === "23505") {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { success: false, error: "A product with this slug already exists" },
+        { status: 409 }
       );
     }
     
@@ -78,7 +85,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
  */
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     const { id } = await params;
     await productRepository.delete(id);
@@ -88,13 +101,6 @@ export async function DELETE(request: NextRequest, { params }: Params) {
     );
   } catch (error: any) {
     console.error("Failed to delete product:", error);
-    
-    if (error.message === "NEXT_REDIRECT") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
     
     return NextResponse.json(
       { success: false, error: error.message || "Failed to delete product" },

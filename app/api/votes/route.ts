@@ -6,7 +6,21 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { voteRepository } from "@/infrastructure/db/vote.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
+import crypto from "crypto";
+
+/**
+ * Generate a fingerprint for the voter based on IP and User-Agent
+ */
+function generateVoterFingerprint(request: NextRequest): string {
+  const ip = request.headers.get("x-forwarded-for") || 
+             request.headers.get("x-real-ip") || 
+             "unknown";
+  const userAgent = request.headers.get("user-agent") || "unknown";
+  
+  const data = `${ip}:${userAgent}`;
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
 
 /**
  * GET /api/votes
@@ -40,7 +54,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await voteRepository.vote(body.candidateId);
+    // Generate voter fingerprint
+    const voterFingerprint = generateVoterFingerprint(request);
+    
+    // Check if already voted
+    const hasVoted = await voteRepository.hasVoted(body.candidateId, voterFingerprint);
+    if (hasVoted) {
+      return NextResponse.json(
+        { success: false, error: "You have already voted for this candidate" },
+        { status: 409 }
+      );
+    }
+
+    await voteRepository.vote(body.candidateId, voterFingerprint);
     
     return NextResponse.json(
       { success: true, message: "Vote cast successfully" }
@@ -60,7 +86,13 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     const body = await request.json();
     
@@ -87,13 +119,6 @@ export async function PUT(request: NextRequest) {
     );
   } catch (error: any) {
     console.error("Failed to create vote candidate:", error);
-    
-    if (error.message === "NEXT_REDIRECT") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
     
     return NextResponse.json(
       { success: false, error: error.message || "Failed to create candidate" },

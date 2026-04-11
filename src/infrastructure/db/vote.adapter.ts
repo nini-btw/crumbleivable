@@ -3,11 +3,11 @@
  * @module infrastructure/db/vote-adapter
  */
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import type { VoteCandidate } from "@/domain/entities/vote";
 import type { IVoteRepository } from "@/domain/ports/repositories";
 import { db, mockVoteCandidates } from "./client";
-import { voteCandidates } from "./schema";
+import { voteCandidates, voteLogs } from "./schema";
 
 // Check if we're in mock mode
 const isMockMode = !db;
@@ -46,11 +46,36 @@ export class VoteRepository implements IVoteRepository {
     return result[0] ? this.mapToEntity(result[0]) : null;
   }
 
-  async vote(candidateId: string): Promise<void> {
+  async hasVoted(candidateId: string, voterFingerprint: string): Promise<boolean> {
+    if (isMockMode) return false;
+
+    const result = await db
+      .select()
+      .from(voteLogs)
+      .where(
+        and(
+          eq(voteLogs.candidateId, candidateId),
+          eq(voteLogs.voterFingerprint, voterFingerprint)
+        )
+      )
+      .limit(1);
+
+    return result.length > 0;
+  }
+
+  async vote(candidateId: string, voterFingerprint?: string): Promise<void> {
     const candidate = await this.getById(candidateId);
     if (!candidate) throw new Error("Candidate not found");
 
     if (isMockMode) return;
+
+    // Record the vote log if fingerprint is provided
+    if (voterFingerprint) {
+      await db.insert(voteLogs).values({
+        candidateId,
+        voterFingerprint,
+      });
+    }
 
     await db
       .update(voteCandidates)

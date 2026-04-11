@@ -11,7 +11,8 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
-  price: number;
+  price: number; // Price in centimes (smallest currency unit)
+  displayPrice: number; // Price in dollars/units (price / 100)
   isActive: boolean;
   type: ProductType;
   images: string[];

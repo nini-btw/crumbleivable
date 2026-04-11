@@ -18,6 +18,16 @@ export interface IProductRepository {
   getAllActive(): Promise<Product[]>;
 
   /**
+   * Get all active products with pagination
+   */
+  getAllActivePaginated(limit: number, offset: number): Promise<Product[]>;
+
+  /**
+   * Get count of active products
+   */
+  getActiveCount(): Promise<number>;
+
+  /**
    * Get product by slug
    */
   getBySlug(slug: string): Promise<Product | null>;
@@ -108,9 +118,14 @@ export interface IVoteRepository {
   getById(id: string): Promise<VoteCandidate | null>;
 
   /**
+   * Check if voter has already voted for candidate
+   */
+  hasVoted(candidateId: string, voterFingerprint: string): Promise<boolean>;
+
+  /**
    * Increment vote count for candidate
    */
-  vote(candidateId: string): Promise<void>;
+  vote(candidateId: string, voterFingerprint?: string): Promise<void>;
 
   /**
    * Create new candidate (admin)

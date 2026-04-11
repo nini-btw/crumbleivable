@@ -8,6 +8,13 @@
       "when": 1775861212171,
       "tag": "0000_open_mystique",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775881355299,
+      "tag": "0001_common_roland_deschain",
+      "breakpoints": true
     }
   ]
 }

@@ -6,16 +6,39 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { productRepository } from "@/infrastructure/db/product.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 /**
  * GET /api/products
- * Get all active products
+ * Get all active products with pagination
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const products = await productRepository.getAllActive();
-    return NextResponse.json({ success: true, data: products });
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "20");
+    
+    // Validate pagination params
+    const validatedPage = Math.max(1, page);
+    const validatedLimit = Math.min(100, Math.max(1, limit)); // Max 100 per page
+    
+    const offset = (validatedPage - 1) * validatedLimit;
+    
+    const products = await productRepository.getAllActivePaginated(validatedLimit, offset);
+    
+    // Get total count for pagination metadata
+    const totalCount = await productRepository.getActiveCount();
+    
+    return NextResponse.json({
+      success: true,
+      data: products,
+      pagination: {
+        page: validatedPage,
+        limit: validatedLimit,
+        totalCount,
+        totalPages: Math.ceil(totalCount / validatedLimit),
+      }
+    });
   } catch (error) {
     console.error("Failed to fetch products:", error);
     return NextResponse.json(
@@ -32,7 +55,13 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Check admin authentication
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
     const body = await request.json();
     
@@ -55,10 +84,11 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error("Failed to create product:", error);
     
-    if (error.message === "NEXT_REDIRECT") {
+    // Check for unique constraint violation (duplicate slug)
+    if (error.message?.includes("unique constraint") || error.code === "23505") {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { success: false, error: "A product with this slug already exists" },
+        { status: 409 }
       );
     }
     

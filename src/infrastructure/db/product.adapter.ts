@@ -3,7 +3,7 @@
  * @module infrastructure/db/product-adapter
  */
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, and } from "drizzle-orm";
 import type { Product, CookiePiece, CookieBox } from "@/domain/entities/product";
 import type { IProductRepository } from "@/domain/ports/repositories";
 import { db, mockProducts } from "./client";
@@ -28,6 +28,35 @@ export class ProductRepository implements IProductRepository {
       .orderBy(desc(products.createdAt));
 
     return result.map(this.mapToEntity);
+  }
+
+  async getAllActivePaginated(limit: number, offset: number): Promise<Product[]> {
+    if (isMockMode) {
+      return mockProducts.filter((p) => p.isActive).slice(offset, offset + limit);
+    }
+
+    const result = await db
+      .select()
+      .from(products)
+      .where(eq(products.isActive, true))
+      .orderBy(desc(products.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    return result.map(this.mapToEntity);
+  }
+
+  async getActiveCount(): Promise<number> {
+    if (isMockMode) {
+      return mockProducts.filter((p) => p.isActive).length;
+    }
+
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(products)
+      .where(eq(products.isActive, true));
+
+    return result[0]?.count || 0;
   }
 
   async getBySlug(slug: string): Promise<Product | null> {
@@ -60,26 +89,26 @@ export class ProductRepository implements IProductRepository {
 
   async getAllCookies(): Promise<CookiePiece[]> {
     if (isMockMode) {
-      return mockProducts.filter((p): p is CookiePiece => p.type === "cookie");
+      return mockProducts.filter((p): p is CookiePiece => p.type === "cookie" && p.isActive);
     }
 
     const result = await db
       .select()
       .from(products)
-      .where(eq(products.type, "cookie"));
+      .where(and(eq(products.type, "cookie"), eq(products.isActive, true)));
 
     return result.map(this.mapToEntity) as CookiePiece[];
   }
 
   async getAllBoxes(): Promise<CookieBox[]> {
     if (isMockMode) {
-      return mockProducts.filter((p): p is CookieBox => p.type === "box");
+      return mockProducts.filter((p): p is CookieBox => p.type === "box" && p.isActive);
     }
 
     const result = await db
       .select()
       .from(products)
-      .where(eq(products.type, "box"));
+      .where(and(eq(products.type, "box"), eq(products.isActive, true)));
 
     return result.map(this.mapToEntity) as CookieBox[];
   }
@@ -166,6 +195,7 @@ export class ProductRepository implements IProductRepository {
       slug: row.slug,
       description: row.description,
       price: row.price,
+      displayPrice: row.price / 100, // Price in dollars/units
       isActive: row.isActive,
       type: row.type,
       images: row.images || [],

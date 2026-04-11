@@ -3,7 +3,7 @@
  * @module infrastructure/db/order-adapter
  */
 
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, isNull } from "drizzle-orm";
 import type { Order, CreateOrderPayload } from "@/domain/entities/order";
 import type { IOrderRepository } from "@/domain/ports/repositories";
 import { calculateCartTotal } from "@/domain/rules/cart.rules";
@@ -99,6 +99,11 @@ export class OrderRepository implements IOrderRepository {
       .from(orderItems)
       .where(eq(orderItems.orderId, id));
 
+    // Log warning if items array is empty for a completed order
+    if (itemsResult.length === 0) {
+      console.warn(`[OrderAdapter] Order ${id} has no items`);
+    }
+
     return this.mapToEntity(orderResult, itemsResult);
   }
 
@@ -107,9 +112,11 @@ export class OrderRepository implements IOrderRepository {
       return mockOrders.slice(0, limit);
     }
 
+    // Exclude soft-deleted orders
     const ordersResult = await db
       .select()
       .from(orders)
+      .where(isNull(orders.deletedAt))
       .orderBy(desc(orders.createdAt))
       .limit(limit || 1000);
 
@@ -140,11 +147,20 @@ export class OrderRepository implements IOrderRepository {
   async delete(id: string): Promise<void> {
     if (isMockMode) return;
 
-    // Delete order items first (cascade)
-    await db.delete(orderItems).where(eq(orderItems.orderId, id));
-    
-    // Delete order
-    await db.delete(orders).where(eq(orders.id, id));
+    // Get order to check status
+    const order = await this.getById(id);
+    if (!order) throw new Error("Order not found");
+
+    // Only allow deletion of cancelled orders (Option B)
+    if (order.status !== "cancelled") {
+      throw new Error("Only cancelled orders can be deleted");
+    }
+
+    // Soft delete - set deletedAt timestamp
+    await db
+      .update(orders)
+      .set({ deletedAt: new Date(), updatedAt: new Date() })
+      .where(eq(orders.id, id));
   }
 
   /**

@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { dropRepository } from "@/infrastructure/db/drop.adapter";
-import { requireAdmin } from "@/infrastructure/auth/supabase-auth";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 /**
  * GET /api/drops
@@ -18,13 +18,44 @@ export async function GET(request: NextRequest) {
     const all = searchParams.get("all") === "true";
     
     if (all) {
+      // Check admin for getting all drops
+      const admin = await getAdminSession();
+      if (!admin) {
+        return NextResponse.json(
+          { success: false, error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
       // Get all drops for admin
       const drops = await dropRepository.getAll();
       return NextResponse.json({ success: true, data: drops });
     }
     
     // Get current active drop
-    const drop = await dropRepository.getCurrent();
+    let drop = await dropRepository.getCurrent();
+    
+    // Auto-reveal if scheduled time has passed
+    if (drop && !drop.revealedAt && new Date(drop.scheduledAt) < new Date()) {
+      await dropRepository.markRevealed(drop.id);
+      // Refresh to get updated data
+      drop = await dropRepository.getCurrent();
+    }
+    
+    // For public API, hide unrevealed drop details
+    if (drop && !drop.revealedAt) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          id: drop.id,
+          scheduledAt: drop.scheduledAt,
+          isActive: drop.isActive,
+          revealedAt: drop.revealedAt,
+          createdAt: drop.createdAt,
+          // Exclude product and productId for unrevealed drops
+        }
+      });
+    }
+    
     return NextResponse.json({ success: true, data: drop });
   } catch (error) {
     console.error("Failed to fetch drop:", error);
@@ -41,7 +72,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    await requireAdmin();
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
     
     const body = await request.json();
     
@@ -64,13 +101,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: any) {
     console.error("Failed to create drop:", error);
-    
-    if (error.message === "NEXT_REDIRECT") {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
     
     return NextResponse.json(
       { success: false, error: error.message || "Failed to create drop" },

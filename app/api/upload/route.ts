@@ -1,6 +1,6 @@
 /**
  * File Upload API Route
- * @route POST /api/upload - Upload an image file
+ * @route POST /api/upload - Upload an image file (admin only)
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -8,9 +8,19 @@ import { writeFile } from "fs/promises";
 import { join } from "path";
 import { mkdir } from "fs/promises";
 import { existsSync } from "fs";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 export async function POST(request: NextRequest) {
   try {
+    // Check admin authentication
+    const admin = await getAdminSession();
+    if (!admin) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File;
 

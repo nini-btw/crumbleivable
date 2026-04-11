@@ -69,6 +69,7 @@ export const orders = pgTable("orders", {
   giftNote: text("gift_note"),
   status: orderStatusEnum("status").default("pending").notNull(),
   totalAmount: integer("total_amount").notNull(),
+  deletedAt: timestamp("deleted_at"), // Soft delete column
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -116,6 +117,18 @@ export const weeklyDrops = pgTable("weekly_drops", {
 });
 
 /**
+ * Vote logs table (tracks who voted to prevent duplicate votes)
+ */
+export const voteLogs = pgTable("vote_logs", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  candidateId: uuid("candidate_id")
+    .notNull()
+    .references(() => voteCandidates.id, { onDelete: "cascade" }),
+  voterFingerprint: varchar("voter_fingerprint", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+/**
  * Admin users table
  */
 export const adminUsers = pgTable("admin_users", {
@@ -136,5 +149,7 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type NewOrderItem = typeof orderItems.$inferInsert;
 export type VoteCandidate = typeof voteCandidates.$inferSelect;
 export type NewVoteCandidate = typeof voteCandidates.$inferInsert;
+export type VoteLog = typeof voteLogs.$inferSelect;
+export type NewVoteLog = typeof voteLogs.$inferInsert;
 export type WeeklyDrop = typeof weeklyDrops.$inferSelect;
 export type NewWeeklyDrop = typeof weeklyDrops.$inferInsert;
