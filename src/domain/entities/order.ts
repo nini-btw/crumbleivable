@@ -29,6 +29,14 @@ export interface Order {
   items: OrderItem[];
   status: OrderStatus;
   totalAmount: number;
+  // Delivery details
+  deliveryZoneId?: string;
+  deliveryType?: "stop_desk" | "home";
+  deliveryFee?: number;
+  wilayaCode?: string;
+  wilayaName?: string;
+  communeName?: string;
+  orderDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -80,4 +88,31 @@ export interface CreateOrderPayload {
   customer: CustomerInfo;
   notes: OrderNotes;
   items: CartItem[];
+  deliveryZoneId: string;
+  deliveryType: "stop_desk" | "home";
+  deliveryFee: number;
+  wilayaCode: string;
+  wilayaName: string;
+  communeName: string;
+}
+
+/**
+ * Order filters for admin
+ */
+export interface OrderFilters {
+  wilayaCode?: string;
+  status?: OrderStatus;
+  startDate?: Date;
+  endDate?: Date;
+  searchQuery?: string;
+}
+
+/**
+ * Wilaya order statistics
+ */
+export interface WilayaOrderStats {
+  wilayaCode: string;
+  wilayaName: string;
+  orderCount: number;
+  totalRevenue: number;
 }

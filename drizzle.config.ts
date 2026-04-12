@@ -1,4 +1,9 @@
 import type { Config } from "drizzle-kit";
+import dotenv from "dotenv";
+import path from "path";
+
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
 /**
  * Drizzle ORM configuration

@@ -161,6 +161,12 @@ export function createOrderPayload(overrides?: Partial<CreateOrderPayload>): Cre
     items: [
       createCartItem({ product: createCookiePiece(), quantity: 3 }),
     ],
+    deliveryZoneId: generateId("zone"),
+    deliveryType: "stop_desk",
+    deliveryFee: 400,
+    wilayaCode: "16",
+    wilayaName: "Alger",
+    communeName: "Alger Centre",
     ...overrides,
   };
 }

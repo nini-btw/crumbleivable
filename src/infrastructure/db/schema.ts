@@ -33,6 +33,11 @@ export const orderStatusEnum = pgEnum("order_status", [
 ]);
 
 /**
+ * Delivery type enum
+ */
+export const deliveryTypeEnum = pgEnum("delivery_type", ["stop_desk", "home"]);
+
+/**
  * Products table
  */
 export const products = pgTable("products", {
@@ -69,6 +74,15 @@ export const orders = pgTable("orders", {
   giftNote: text("gift_note"),
   status: orderStatusEnum("status").default("pending").notNull(),
   totalAmount: integer("total_amount").notNull(),
+  // Delivery fields
+  deliveryZoneId: uuid("delivery_zone_id").references(() => deliveryZones.id),
+  deliveryType: deliveryTypeEnum("delivery_type"),
+  deliveryFee: integer("delivery_fee"),
+  // Wilaya/Commune details (denormalized for reporting)
+  wilayaCode: varchar("wilaya_code", { length: 2 }),
+  wilayaName: varchar("wilaya_name", { length: 255 }),
+  communeName: varchar("commune_name", { length: 255 }),
+  orderDate: timestamp("order_date").defaultNow(),
   deletedAt: timestamp("deleted_at"), // Soft delete column
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -139,6 +153,22 @@ export const adminUsers = pgTable("admin_users", {
 });
 
 /**
+ * Delivery zones table (Algerian wilayas/communes)
+ */
+export const deliveryZones = pgTable("delivery_zones", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  wilayaCode: varchar("wilaya_code", { length: 2 }).notNull(),
+  wilayaNameAscii: varchar("wilaya_name_ascii", { length: 255 }).notNull(),
+  wilayaName: varchar("wilaya_name", { length: 255 }).notNull(),
+  communeNameAscii: varchar("commune_name_ascii", { length: 255 }).notNull(),
+  communeName: varchar("commune_name", { length: 255 }).notNull(),
+  stopDeskFee: integer("stop_desk_fee").notNull(),
+  homeFee: integer("home_fee").notNull(),
+  hasStopDesk: boolean("has_stop_desk").default(true).notNull(),
+  hasHomeDelivery: boolean("has_home_delivery").default(true).notNull(),
+});
+
+/**
  * Type definitions
  */
 export type Product = typeof products.$inferSelect;
@@ -153,3 +183,5 @@ export type VoteLog = typeof voteLogs.$inferSelect;
 export type NewVoteLog = typeof voteLogs.$inferInsert;
 export type WeeklyDrop = typeof weeklyDrops.$inferSelect;
 export type NewWeeklyDrop = typeof weeklyDrops.$inferInsert;
+export type DeliveryZone = typeof deliveryZones.$inferSelect;
+export type NewDeliveryZone = typeof deliveryZones.$inferInsert;

@@ -4,9 +4,10 @@
  */
 
 import type { CookiePiece, CookieBox, Product } from "../entities/product";
-import type { Order, CreateOrderPayload } from "../entities/order";
+import type { Order, CreateOrderPayload, OrderFilters, WilayaOrderStats } from "../entities/order";
 import type { VoteCandidate } from "../entities/vote";
 import type { WeeklyDrop } from "../entities/drop";
+import type { DeliveryZone } from "../entities/delivery";
 
 /**
  * Product repository interface
@@ -91,6 +92,16 @@ export interface IOrderRepository {
    * Get all orders (for admin)
    */
   getAll(limit?: number): Promise<Order[]>;
+
+  /**
+   * Get orders with filters
+   */
+  getAllWithFilters(filters?: OrderFilters, limit?: number): Promise<Order[]>;
+
+  /**
+   * Get top wilayas by order count
+   */
+  getTopWilayas(limit?: number): Promise<WilayaOrderStats[]>;
 
   /**
    * Update order status
@@ -183,6 +194,26 @@ export interface IDropRepository {
    * Get all drops
    */
   getAll(): Promise<WeeklyDrop[]>;
+}
+
+/**
+ * Delivery repository interface
+ */
+export interface IDeliveryRepository {
+  /**
+   * Get all distinct wilayas (provinces)
+   */
+  getWilayas(): Promise<DeliveryZone[]>;
+
+  /**
+   * Get all communes for a specific wilaya
+   */
+  getCommunesByWilaya(wilayaCode: string): Promise<DeliveryZone[]>;
+
+  /**
+   * Get a specific delivery zone by ID
+   */
+  getZone(id: string): Promise<DeliveryZone | null>;
 }
 
 /**

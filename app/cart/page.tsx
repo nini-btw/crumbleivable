@@ -54,11 +54,16 @@ import { addToast } from "@/presentation/store/ui/ui.slice";
 import { formatPrice } from "@/presentation/lib/utils";
 import { fadeInUp } from "@/presentation/lib/animations";
 import { useTranslations } from 'next-intl';
+import { WilayaCommuneSelect } from "@/presentation/components/features/WilayaCommuneSelect";
+import type { DeliverySelection } from "@/domain/entities/delivery";
 
 const checkoutSchema = z.object({
   fullName: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number required"),
   address: z.string().min(10, "Complete address required"),
+  deliveryZoneId: z.string().uuid("Delivery zone is required"),
+  deliveryType: z.enum(["stop_desk", "home"]),
+  deliveryFee: z.number().min(0, "Delivery fee is required"),
 });
 
 type CheckoutFormData = z.infer<typeof checkoutSchema>;
@@ -78,14 +83,35 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [orderComplete, setOrderComplete] = React.useState(false);
   const [orderId, setOrderId] = React.useState<string | null>(null);
+  const [deliverySelection, setDeliverySelection] = React.useState<DeliverySelection | null>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema),
   });
+
+  // Update form values when delivery selection changes
+  const handleDeliveryChange = (selection: DeliverySelection | null) => {
+    setDeliverySelection(selection);
+    if (selection) {
+      setValue("deliveryZoneId", selection.zoneId);
+      setValue("deliveryType", selection.type);
+      setValue("deliveryFee", selection.fee);
+    } else {
+      setValue("deliveryZoneId", "");
+      setValue("deliveryType", undefined as unknown as "stop_desk" | "home");
+      setValue("deliveryFee", 0);
+    }
+  };
+
+  // Calculate totals
+  const deliveryFee = deliverySelection?.fee || 0;
+  const subtotal = total;
+  const orderTotal = subtotal + deliveryFee;
 
   const onSubmit = async (data: CheckoutFormData) => {
     if (!canCheckout) {
@@ -119,6 +145,12 @@ export default function CartPage() {
             product: item.product,
             quantity: item.quantity,
           })),
+          deliveryZoneId: data.deliveryZoneId,
+          deliveryType: data.deliveryType,
+          deliveryFee: data.deliveryFee,
+          wilayaCode: deliverySelection?.wilayaCode,
+          wilayaName: deliverySelection?.wilayaName,
+          communeName: deliverySelection?.communeName,
         }),
       });
 
@@ -345,21 +377,30 @@ export default function CartPage() {
                   {...register("address")}
                 />
 
+                {/* Delivery Selection */}
+                <WilayaCommuneSelect
+                  onChange={handleDeliveryChange}
+                  error={errors.deliveryZoneId?.message || errors.deliveryType?.message}
+                  t={t}
+                />
+
                 <div className="bg-white rounded-2xl p-6 border border-brown-100 mt-6">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-brown-700">{t("common.subtotal")}</span>
                     <span className="text-brown-900">
-                      {formatPrice(total)}
+                      {formatPrice(subtotal)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-brown-700">{t("common.delivery")}</span>
-                    <span className="text-green-600">{t("common.free")}</span>
+                    <span className={deliveryFee > 0 ? "text-brown-900" : "text-green-600"}>
+                      {deliveryFee > 0 ? formatPrice(deliveryFee) : t("common.free")}
+                    </span>
                   </div>
                   <div className="border-t border-brown-100 pt-4 flex justify-between items-center">
                     <span className="font-bold text-brown-900">{t("common.total")}</span>
                     <span className="text-2xl font-extrabold text-brown-900">
-                      {formatPrice(total)}
+                      {formatPrice(orderTotal)}
                     </span>
                   </div>
                 </div>
@@ -369,11 +410,15 @@ export default function CartPage() {
                   size="lg"
                   fullWidth
                   isLoading={isSubmitting}
-                  disabled={!canCheckout}
+                  disabled={!canCheckout || !deliverySelection}
                   className="cursor-pointer"
                   data-testid="place-order-button"
                 >
-                  {canCheckout ? t("checkout.placeOrder") : `${t("build.completeSelection")} (${cookiesNeeded})`}
+                  {!canCheckout 
+                    ? `${t("build.completeSelection")} (${cookiesNeeded})`
+                    : !deliverySelection
+                    ? t("checkout.selectDelivery") || "Select delivery"
+                    : t("checkout.placeOrder")}
                 </Button>
 
                 <p className="text-xs text-brown-400 text-center">

@@ -17,12 +17,18 @@ import {
   TrendingUpIcon,
   DollarSignIcon,
   ShoppingBagIcon,
-  BarChart3Icon
+  BarChart3Icon,
+  FilterIcon,
+  MapIcon,
+  BuildingIcon
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
-import type { Order } from "@/domain/entities/order";
+import { Select } from "@/presentation/components/ui/Select";
+import type { Order, WilayaOrderStats } from "@/domain/entities/order";
+import type { DeliveryZone } from "@/domain/entities/delivery";
 import { useTranslations, useLocale } from 'next-intl';
 import Image from "next/image";
+import { formatPrice } from "@/presentation/lib/utils";
 
 // Product image mapping
 const getProductImage = (slug: string, image?: string): string => {
@@ -85,6 +91,59 @@ function StatCard({
   );
 }
 
+// Top Wilayas Chart
+function TopWilayasChart({ stats, t }: { stats: WilayaOrderStats[]; t: (key: string) => string }) {
+  if (stats.length === 0) {
+    return (
+      <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
+        <h3 className="font-bold text-[#2C1810] text-lg mb-4 flex items-center gap-2">
+          <MapIcon className="w-5 h-5 text-[#F4538A]" />
+          {t('admin.orders.topWilayas')}
+        </h3>
+        <p className="text-[#A07850] text-center py-8">{t('admin.orders.noData')}</p>
+      </div>
+    );
+  }
+
+  const maxOrders = Math.max(...stats.map(s => s.orderCount), 1);
+
+  return (
+    <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
+      <h3 className="font-bold text-[#2C1810] text-lg mb-4 flex items-center gap-2">
+        <MapIcon className="w-5 h-5 text-[#F4538A]" />
+        {t('admin.orders.topWilayas')}
+      </h3>
+      <div className="space-y-3">
+        {stats.map((stat, index) => {
+          const barWidth = (stat.orderCount / maxOrders) * 100;
+          return (
+            <div key={stat.wilayaCode}>
+              <div className="flex justify-between text-sm mb-1">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-[#F4538A]/10 text-[#F4538A] text-xs font-bold flex items-center justify-center">
+                    {index + 1}
+                  </span>
+                  <span className="font-medium text-[#2C1810]">{stat.wilayaName}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[#A07850] text-xs block">{stat.orderCount} {t('admin.orders.orders')}</span>
+                  <span className="text-[#F4538A] text-xs font-medium">{formatPrice(stat.totalRevenue)}</span>
+                </div>
+              </div>
+              <div className="h-2 bg-[#F0E6D6] rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-[#F4538A] rounded-full transition-all duration-500"
+                  style={{ width: `${barWidth}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // Status Distribution Chart
 function StatusChart({ orders, t }: { orders: Order[]; t: (key: string) => string }) {
   const statusOptions = ["pending", "confirmed", "preparing", "ready", "delivered", "cancelled"];
@@ -127,58 +186,6 @@ function StatusChart({ orders, t }: { orders: Order[]; t: (key: string) => strin
                   style={{ width: `${barWidth}%` }}
                 />
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// Weekly Revenue Chart
-function WeeklyRevenueChart({ orders, t }: { orders: Order[]; t: (key: string) => string }) {
-  const last7Days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
-  });
-
-  const dailyRevenue = last7Days.map(date => {
-    return orders
-      .filter(o => o.createdAt.toString().includes(date) && o.status !== 'cancelled')
-      .reduce((sum, o) => sum + o.totalAmount, 0);
-  });
-
-  const maxRevenue = Math.max(...dailyRevenue, 1);
-  const totalWeekRevenue = dailyRevenue.reduce((a, b) => a + b, 0);
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { weekday: 'short' });
-  };
-
-  return (
-    <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-[#2C1810] text-lg flex items-center gap-2">
-          <TrendingUpIcon className="w-5 h-5 text-[#F4538A]" />
-          {t('admin.dashboard.revenue')}
-        </h3>
-        <span className="text-lg font-bold text-[#2C1810]">{totalWeekRevenue.toLocaleString()} {t('common.currency')}</span>
-      </div>
-      <div className="flex items-end gap-2 h-32">
-        {dailyRevenue.map((revenue, i) => {
-          const height = maxRevenue > 0 ? (revenue / maxRevenue) * 100 : 0;
-          return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-1">
-              <div className="w-full flex items-end justify-center h-24">
-                <div 
-                  className="w-full max-w-8 bg-[#F4538A] rounded-t-lg transition-all duration-500 hover:bg-[#D63A72]"
-                  style={{ height: `${height}%` }}
-                  title={`${revenue} ${t('common.currency')}`}
-                />
-              </div>
-              <span className="text-[10px] text-[#A07850]">{formatDate(last7Days[i])}</span>
             </div>
           );
         })}
@@ -258,6 +265,50 @@ function OrderDetailSidebar({
               ))}
             </div>
           </div>
+
+          {/* Delivery Info */}
+          {(order.wilayaName || order.communeName) && (
+            <div>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-[#A07850] mb-3 flex items-center gap-2">
+                <MapIcon className="w-4 h-4" />
+                {t('admin.orders.orderDetails.deliveryInfo')}
+              </h3>
+              <div className="bg-white border border-[#E8D5C0] rounded-2xl p-4 space-y-3">
+                {order.wilayaName && (
+                  <div className="flex items-start gap-3">
+                    <BuildingIcon className="w-5 h-5 text-[#F4538A] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#A07850]">{t('admin.orders.wilaya')}</p>
+                      <p className="font-medium text-[#2C1810]">{order.wilayaName} ({order.wilayaCode})</p>
+                    </div>
+                  </div>
+                )}
+                {order.communeName && (
+                  <div className="flex items-start gap-3">
+                    <MapPinIcon className="w-5 h-5 text-[#F4538A] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#A07850]">{t('admin.orders.commune')}</p>
+                      <p className="font-medium text-[#2C1810]">{order.communeName}</p>
+                    </div>
+                  </div>
+                )}
+                {order.deliveryType && (
+                  <div className="flex items-start gap-3">
+                    <PackageIcon className="w-5 h-5 text-[#F4538A] mt-0.5" />
+                    <div>
+                      <p className="text-xs text-[#A07850]">{t('admin.orders.deliveryType')}</p>
+                      <p className="font-medium text-[#2C1810]">
+                        {t(`admin.orders.deliveryTypes.${order.deliveryType}`)}
+                        {order.deliveryFee !== undefined && (
+                          <span className="text-[#F4538A] ml-2">({formatPrice(order.deliveryFee)})</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Customer Info */}
           <div>
@@ -345,15 +396,17 @@ function OrderDetailSidebar({
           <div className="bg-[#2C1810] rounded-2xl p-4 text-white">
             <div className="flex justify-between items-center mb-2">
               <span className="text-white/70">{t('admin.orders.orderDetails.subtotal')}</span>
-              <span>{order.totalAmount} {t('common.currency')}</span>
+              <span>{formatPrice(order.totalAmount - (order.deliveryFee || 0))}</span>
             </div>
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-white/70">{t('common.delivery')}</span>
-              <span className="text-green-400">{t('common.free')}</span>
-            </div>
+            {order.deliveryFee !== undefined && (
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-white/70">{t('common.delivery')}</span>
+                <span>{formatPrice(order.deliveryFee)}</span>
+              </div>
+            )}
             <div className="border-t border-white/20 pt-3 flex justify-between items-center">
               <span className="font-bold">{t('admin.orders.orderDetails.total')}</span>
-              <span className="text-2xl font-bold">{order.totalAmount} {t('common.currency')}</span>
+              <span className="text-2xl font-bold">{formatPrice(order.totalAmount)}</span>
             </div>
           </div>
 
@@ -419,11 +472,14 @@ function OrderCard({
         <div className="flex-1 min-w-0">
           <p className="font-medium text-[#2C1810] truncate">{order.fullName}</p>
           <p className="text-sm text-[#A07850]">{order.phone}</p>
+          {order.wilayaName && (
+            <p className="text-xs text-[#F4538A]">{order.wilayaName}</p>
+          )}
         </div>
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-[#F0E6D6]">
-        <p className="font-bold text-[#2C1810]">{order.totalAmount} {t('common.currency')}</p>
+        <p className="font-bold text-[#2C1810]">{formatPrice(order.totalAmount)}</p>
         <div className="flex gap-2">
           <button
             onClick={onView}
@@ -445,47 +501,108 @@ function OrderCard({
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [wilayas, setWilayas] = useState<DeliveryZone[]>([]);
+  const [topWilayas, setTopWilayas] = useState<WilayaOrderStats[]>([]);
+  
+  // Filters
+  const [filterWilaya, setFilterWilaya] = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
+  const [showFilters, setShowFilters] = useState(false);
+  
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === 'ar';
 
+  // Fetch orders and wilayas
   useEffect(() => {
-    async function fetchOrders() {
+    async function fetchData() {
       try {
-        const response = await fetch("/api/orders");
-        const result = await response.json();
-        if (result.success) {
-          setOrders(result.data);
+        // Fetch orders
+        const ordersRes = await fetch("/api/orders");
+        const ordersData = await ordersRes.json();
+        if (ordersData.success) {
+          setOrders(ordersData.data);
+          setFilteredOrders(ordersData.data);
+        }
+
+        // Fetch wilayas for filter
+        const wilayasRes = await fetch("/api/delivery/wilayas");
+        const wilayasData = await wilayasRes.json();
+        if (wilayasData.success) {
+          setWilayas(wilayasData.data);
+        }
+
+        // Fetch top wilayas stats
+        const statsRes = await fetch("/api/orders/stats?type=wilayas&limit=5");
+        const statsData = await statsRes.json();
+        if (statsData.success) {
+          setTopWilayas(statsData.data);
         }
       } catch (error) {
-        console.error("Failed to fetch orders:", error);
+        console.error("Failed to fetch data:", error);
       } finally {
         setLoading(false);
       }
     }
-    fetchOrders();
+    fetchData();
   }, []);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...orders];
+
+    if (filterWilaya) {
+      filtered = filtered.filter(o => o.wilayaCode === filterWilaya);
+    }
+
+    if (filterStatus) {
+      filtered = filtered.filter(o => o.status === filterStatus);
+    }
+
+    if (filterStartDate) {
+      const start = new Date(filterStartDate);
+      filtered = filtered.filter(o => new Date(o.createdAt) >= start);
+    }
+
+    if (filterEndDate) {
+      const end = new Date(filterEndDate);
+      end.setHours(23, 59, 59);
+      filtered = filtered.filter(o => new Date(o.createdAt) <= end);
+    }
+
+    setFilteredOrders(filtered);
+  }, [orders, filterWilaya, filterStatus, filterStartDate, filterEndDate]);
+
+  // Clear filters
+  const clearFilters = () => {
+    setFilterWilaya("");
+    setFilterStatus("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+  };
 
   // Calculate stats
   const stats = React.useMemo(() => {
-    const total = orders.length;
-    const totalRevenue = orders
+    const total = filteredOrders.length;
+    const totalRevenue = filteredOrders
       .filter(o => o.status !== 'cancelled')
       .reduce((sum, o) => sum + o.totalAmount, 0);
-    const pending = orders.filter(o => o.status === 'pending').length;
-    const delivered = orders.filter(o => o.status === 'delivered').length;
+    const pending = filteredOrders.filter(o => o.status === 'pending').length;
+    const delivered = filteredOrders.filter(o => o.status === 'delivered').length;
     
-    // Today's orders
     const today = new Date().toISOString().split('T')[0];
-    const todayOrders = orders.filter(o => o.createdAt.toString().includes(today)).length;
+    const todayOrders = filteredOrders.filter(o => o.createdAt.toString().includes(today)).length;
 
     return { total, totalRevenue, pending, delivered, todayOrders };
-  }, [orders]);
+  }, [filteredOrders]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -497,7 +614,7 @@ export default function AdminOrdersPage() {
   };
 
   const sortedOrders = React.useMemo(() => {
-    return [...orders].sort((a, b) => {
+    return [...filteredOrders].sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
         case "id":
@@ -518,7 +635,7 @@ export default function AdminOrdersPage() {
       }
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [orders, sortField, sortDirection]);
+  }, [filteredOrders, sortField, sortDirection]);
 
   const handleViewOrder = (order: Order) => {
     setSelectedOrder(order);
@@ -585,6 +702,22 @@ export default function AdminOrdersPage() {
     </th>
   );
 
+  // Filter options
+  const wilayaOptions = [
+    { value: "", label: t('admin.orders.allWilayas') },
+    ...wilayas.map(w => ({ value: w.wilayaCode, label: `${w.wilayaCode} - ${w.wilayaNameAscii}` }))
+  ];
+
+  const statusOptions = [
+    { value: "", label: t('admin.orders.allStatuses') },
+    { value: "pending", label: t('admin.orders.statusLabels.pending') },
+    { value: "confirmed", label: t('admin.orders.statusLabels.confirmed') },
+    { value: "preparing", label: t('admin.orders.statusLabels.preparing') },
+    { value: "ready", label: t('admin.orders.statusLabels.ready') },
+    { value: "delivered", label: t('admin.orders.statusLabels.delivered') },
+    { value: "cancelled", label: t('admin.orders.statusLabels.cancelled') },
+  ];
+
   if (loading) {
     return (
       <div className="space-y-8">
@@ -596,13 +729,77 @@ export default function AdminOrdersPage() {
     );
   }
 
+  const hasActiveFilters = filterWilaya || filterStatus || filterStartDate || filterEndDate;
+
   return (
     <div className="space-y-6 sm:space-y-8" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
-      <div>
-        <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">{t('admin.orders.title')}</h1>
-        <p className="text-[#A07850] mt-1">{t('admin.orders.subtitle')}</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl text-[#2C1810]">{t('admin.orders.title')}</h1>
+          <p className="text-[#A07850] mt-1">{t('admin.orders.subtitle')}</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters(!showFilters)}
+          className={`self-start ${hasActiveFilters ? 'border-[#F4538A] text-[#F4538A]' : ''}`}
+        >
+          <FilterIcon className="w-4 h-4 mr-2" />
+          {t('admin.orders.filters')}
+          {hasActiveFilters && <span className="ml-2 w-2 h-2 bg-[#F4538A] rounded-full" />}
+        </Button>
       </div>
+
+      {/* Filters */}
+      {showFilters && (
+        <div className="bg-white rounded-2xl border border-[#E8D5C0] p-4 sm:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Select
+              value={filterWilaya}
+              onChange={setFilterWilaya}
+              options={wilayaOptions}
+              label={t('admin.orders.wilaya')}
+              placeholder={t('admin.orders.selectWilaya')}
+            />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              options={statusOptions}
+              label={t('admin.orders.status')}
+              placeholder={t('admin.orders.selectStatus')}
+            />
+            <div>
+              <label className="block text-sm font-medium text-[#5C3D2E] mb-1.5">
+                {t('admin.orders.startDate')}
+              </label>
+              <input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="w-full rounded-full border-2 border-[#E8D5C0] bg-white px-4 py-2 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#5C3D2E] mb-1.5">
+                {t('admin.orders.endDate')}
+              </label>
+              <input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="w-full rounded-full border-2 border-[#E8D5C0] bg-white px-4 py-2 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm"
+              />
+            </div>
+          </div>
+          {hasActiveFilters && (
+            <div className="flex justify-end">
+              <Button variant="ghost" onClick={clearFilters} className="text-[#A07850]">
+                {t('admin.orders.clearFilters')}
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -615,7 +812,7 @@ export default function AdminOrdersPage() {
         />
         <StatCard 
           title={t('admin.orders.stats.revenue')} 
-          value={`${stats.totalRevenue.toLocaleString()} ${t('common.currency')}`} 
+          value={formatPrice(stats.totalRevenue)} 
           icon={DollarSignIcon} 
           color="bg-green-500"
         />
@@ -635,13 +832,20 @@ export default function AdminOrdersPage() {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <StatusChart orders={orders} t={t} />
-        <WeeklyRevenueChart orders={orders} t={t} />
+        <TopWilayasChart stats={topWilayas} t={t} />
+        <StatusChart orders={filteredOrders} t={t} />
       </div>
 
       {/* Orders Section */}
       <div className="space-y-4">
-        <h2 className="font-bold text-[#2C1810] text-lg">{t('admin.dashboard.recentOrders')}</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold text-[#2C1810] text-lg">{t('admin.dashboard.recentOrders')}</h2>
+          {hasActiveFilters && (
+            <span className="text-sm text-[#A07850]">
+              {filteredOrders.length} {t('admin.orders.results')}
+            </span>
+          )}
+        </div>
         
         {/* Desktop Table */}
         <div className="hidden sm:block bg-white rounded-3xl border border-[#E8D5C0] overflow-hidden">
@@ -651,6 +855,9 @@ export default function AdminOrdersPage() {
                 <tr>
                   <SortHeader field="id">{t('admin.orders.orderId')}</SortHeader>
                   <SortHeader field="customer">{t('admin.orders.customer')}</SortHeader>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-bold uppercase tracking-widest text-[#A07850]">
+                    {t('admin.orders.wilaya')}
+                  </th>
                   <SortHeader field="total">{t('admin.orders.total')}</SortHeader>
                   <SortHeader field="status">{t('admin.orders.status')}</SortHeader>
                   <SortHeader field="date">{t('admin.orders.date')}</SortHeader>
@@ -673,8 +880,20 @@ export default function AdminOrdersPage() {
                         <p className="text-xs text-[#A07850]">{order.phone}</p>
                       </div>
                     </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4">
+                      {order.wilayaName ? (
+                        <div>
+                          <p className="text-sm text-[#2C1810]">{order.wilayaName}</p>
+                          {order.communeName && (
+                            <p className="text-xs text-[#A07850]">{order.communeName}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-[#A07850]">-</span>
+                      )}
+                    </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 font-semibold text-[#2C1810] tabular-nums">
-                      {order.totalAmount} {t('common.currency')}
+                      {formatPrice(order.totalAmount)}
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4">
                       <span
@@ -711,7 +930,7 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
-          {orders.length === 0 && (
+          {sortedOrders.length === 0 && (
             <div className="p-8 text-center text-[#A07850]">
               {t('admin.orders.noOrders')}
             </div>
@@ -733,7 +952,7 @@ export default function AdminOrdersPage() {
               t={t}
             />
           ))}
-          {orders.length === 0 && (
+          {sortedOrders.length === 0 && (
             <div className="p-8 text-center text-[#A07850] bg-white rounded-3xl border border-[#E8D5C0]">
               {t('admin.orders.noOrders')}
             </div>

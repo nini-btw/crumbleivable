@@ -13,7 +13,7 @@ import type {
   INotificationService,
 } from "@/domain/ports/repositories";
 import type { Product, CookiePiece, CookieBox } from "@/domain/entities/product";
-import type { Order, CreateOrderPayload } from "@/domain/entities/order";
+import type { Order, CreateOrderPayload, OrderFilters } from "@/domain/entities/order";
 import type { VoteCandidate } from "@/domain/entities/vote";
 import type { WeeklyDrop } from "@/domain/entities/drop";
 
@@ -53,6 +53,8 @@ export function createMockOrderRepository(): IOrderRepository {
     ),
     getById: vi.fn<(id: string) => Promise<Order | null>>(() => Promise.resolve(null)),
     getAll: vi.fn<(limit?: number) => Promise<Order[]>>(() => Promise.resolve([])),
+    getAllWithFilters: vi.fn<(filters?: OrderFilters, limit?: number) => Promise<Order[]>>(() => Promise.resolve([])),
+    getTopWilayas: vi.fn<(limit?: number) => Promise<{ wilayaCode: string; wilayaName: string; orderCount: number; totalRevenue: number }[]>>(() => Promise.resolve([])),
     updateStatus: vi.fn<(id: string, status: Order["status"]) => Promise<void>>(() =>
       Promise.resolve()
     ),

@@ -3,8 +3,8 @@
  * @module infrastructure/db/order-adapter
  */
 
-import { eq, desc, isNull } from "drizzle-orm";
-import type { Order, CreateOrderPayload } from "@/domain/entities/order";
+import { eq, desc, isNull, and, gte, lte, sql } from "drizzle-orm";
+import type { Order, CreateOrderPayload, OrderFilters, WilayaOrderStats } from "@/domain/entities/order";
 import type { IOrderRepository } from "@/domain/ports/repositories";
 import { calculateCartTotal } from "@/domain/rules/cart.rules";
 import { db, mockOrders } from "./client";
@@ -40,14 +40,20 @@ export class OrderRepository implements IOrderRepository {
           priceSnapshot: item.product.price,
         })),
         status: "pending",
-        totalAmount,
+        totalAmount: totalAmount + payload.deliveryFee,
+        deliveryZoneId: payload.deliveryZoneId,
+        deliveryType: payload.deliveryType,
+        deliveryFee: payload.deliveryFee,
+        wilayaCode: payload.wilayaCode,
+        wilayaName: payload.wilayaName,
+        communeName: payload.communeName,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       return order;
     }
 
-    // Create order
+    // Create order with delivery info
     const [orderResult] = await db
       .insert(orders)
       .values({
@@ -57,7 +63,14 @@ export class OrderRepository implements IOrderRepository {
         cookingNote: payload.notes.cookingNote,
         giftNote: payload.notes.giftNote,
         status: "pending",
-        totalAmount,
+        totalAmount: totalAmount + payload.deliveryFee,
+        deliveryZoneId: payload.deliveryZoneId,
+        deliveryType: payload.deliveryType,
+        deliveryFee: payload.deliveryFee,
+        wilayaCode: payload.wilayaCode,
+        wilayaName: payload.wilayaName,
+        communeName: payload.communeName,
+        orderDate: new Date(),
       })
       .returning();
 
@@ -131,6 +144,77 @@ export class OrderRepository implements IOrderRepository {
     return result;
   }
 
+  async getAllWithFilters(filters?: OrderFilters, limit?: number): Promise<Order[]> {
+    if (isMockMode) {
+      return mockOrders.slice(0, limit);
+    }
+
+    // Build where conditions
+    const conditions = [isNull(orders.deletedAt)];
+    
+    if (filters?.wilayaCode) {
+      conditions.push(eq(orders.wilayaCode, filters.wilayaCode));
+    }
+    
+    if (filters?.status) {
+      conditions.push(eq(orders.status, filters.status));
+    }
+    
+    if (filters?.startDate) {
+      conditions.push(gte(orders.orderDate, filters.startDate));
+    }
+    
+    if (filters?.endDate) {
+      conditions.push(lte(orders.orderDate, filters.endDate));
+    }
+
+    const ordersResult = await db
+      .select()
+      .from(orders)
+      .where(and(...conditions))
+      .orderBy(desc(orders.createdAt))
+      .limit(limit || 1000);
+
+    const result: Order[] = [];
+    for (const order of ordersResult) {
+      const items = await db
+        .select()
+        .from(orderItems)
+        .where(eq(orderItems.orderId, order.id));
+      result.push(this.mapToEntity(order, items));
+    }
+    return result;
+  }
+
+  async getTopWilayas(limit: number = 5): Promise<WilayaOrderStats[]> {
+    if (isMockMode) {
+      return [];
+    }
+
+    const result = await db
+      .select({
+        wilayaCode: orders.wilayaCode,
+        wilayaName: orders.wilayaName,
+        orderCount: sql<number>`COUNT(*)::int`,
+        totalRevenue: sql<number>`SUM(${orders.totalAmount})::int`,
+      })
+      .from(orders)
+      .where(and(
+        isNull(orders.deletedAt),
+        sql`${orders.wilayaCode} IS NOT NULL`
+      ))
+      .groupBy(orders.wilayaCode, orders.wilayaName)
+      .orderBy(sql`COUNT(*) DESC`)
+      .limit(limit);
+
+    return result.map((row: { wilayaCode: string | null; wilayaName: string | null; orderCount: number; totalRevenue: number }) => ({
+      wilayaCode: row.wilayaCode || '',
+      wilayaName: row.wilayaName || '',
+      orderCount: row.orderCount,
+      totalRevenue: row.totalRevenue,
+    }));
+  }
+
   async updateStatus(id: string, status: Order["status"]): Promise<void> {
     if (isMockMode) return;
 
@@ -179,6 +263,13 @@ export class OrderRepository implements IOrderRepository {
       giftNote: order.giftNote || undefined,
       status: order.status,
       totalAmount: order.totalAmount,
+      deliveryZoneId: order.deliveryZoneId || undefined,
+      deliveryType: order.deliveryType || undefined,
+      deliveryFee: order.deliveryFee || undefined,
+      wilayaCode: order.wilayaCode || undefined,
+      wilayaName: order.wilayaName || undefined,
+      communeName: order.communeName || undefined,
+      orderDate: order.orderDate ? new Date(order.orderDate) : undefined,
       createdAt: new Date(order.createdAt),
       updatedAt: new Date(order.updatedAt),
       items: items.map((item) => ({

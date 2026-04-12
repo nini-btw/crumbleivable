@@ -1,6 +1,6 @@
 /**
  * Orders API Routes
- * @route GET /api/orders - Get all orders (admin only)
+ * @route GET /api/orders - Get all orders (admin only) with filters
  * @route POST /api/orders - Create a new order
  */
 
@@ -8,11 +8,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { orderRepository } from "@/infrastructure/db/order.adapter";
 import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 import { canCheckout } from "@/domain/rules/cart.rules";
-import type { CreateOrderPayload } from "@/domain/entities/order";
+import type { CreateOrderPayload, OrderFilters } from "@/domain/entities/order";
 
 /**
  * GET /api/orders
- * Get all orders (admin only)
+ * Get all orders (admin only) with optional filters
  */
 export async function GET(request: NextRequest) {
   try {
@@ -28,7 +28,27 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get("limit") || "100");
     
-    const orders = await orderRepository.getAll(limit);
+    // Parse filters
+    const filters: OrderFilters = {};
+    
+    const wilayaCode = searchParams.get("wilayaCode");
+    if (wilayaCode) filters.wilayaCode = wilayaCode;
+    
+    const status = searchParams.get("status") as OrderFilters["status"];
+    if (status) filters.status = status;
+    
+    const startDate = searchParams.get("startDate");
+    if (startDate) filters.startDate = new Date(startDate);
+    
+    const endDate = searchParams.get("endDate");
+    if (endDate) filters.endDate = new Date(endDate);
+    
+    const hasFilters = wilayaCode || status || startDate || endDate;
+    
+    const orders = hasFilters 
+      ? await orderRepository.getAllWithFilters(filters, limit)
+      : await orderRepository.getAll(limit);
+    
     return NextResponse.json({ success: true, data: orders });
   } catch (error) {
     console.error("Failed to fetch orders:", error);
@@ -59,6 +79,22 @@ export async function POST(request: NextRequest) {
     if (!body.customer?.fullName || !body.customer?.phone || !body.customer?.address) {
       return NextResponse.json(
         { success: false, error: "Missing customer information" },
+        { status: 400 }
+      );
+    }
+
+    // Validate delivery fields
+    if (!body.deliveryZoneId || !body.deliveryType || body.deliveryFee === undefined) {
+      return NextResponse.json(
+        { success: false, error: "Missing delivery information" },
+        { status: 400 }
+      );
+    }
+    
+    // Validate wilaya/commune fields
+    if (!body.wilayaCode || !body.wilayaName || !body.communeName) {
+      return NextResponse.json(
+        { success: false, error: "Missing wilaya/commune information" },
         { status: 400 }
       );
     }

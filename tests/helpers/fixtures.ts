@@ -27,7 +27,6 @@ export const validOrderPayload: CreateOrderPayload = {
         slug: "chocolate-chip",
         description: "Classic chocolate chip cookie",
         price: 150,
-
         isActive: true,
         type: "cookie",
         images: ["/images/test-cookie.png"],
@@ -45,7 +44,6 @@ export const validOrderPayload: CreateOrderPayload = {
         slug: "double-chocolate",
         description: "Rich double chocolate cookie",
         price: 170,
-
         isActive: true,
         type: "cookie",
         images: ["/images/test-cookie.png"],
@@ -57,6 +55,12 @@ export const validOrderPayload: CreateOrderPayload = {
       quantity: 1,
     },
   ],
+  deliveryZoneId: "test-zone-1",
+  deliveryType: "stop_desk",
+  deliveryFee: 400,
+  wilayaCode: "16",
+  wilayaName: "Alger",
+  communeName: "Alger Centre",
 };
 
 /**
