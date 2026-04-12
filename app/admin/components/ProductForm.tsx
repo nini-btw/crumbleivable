@@ -3,8 +3,10 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/presentation/components/ui/Button";
-import { UploadIcon, XIcon } from "lucide-react";
+import { Select } from "@/presentation/components/ui/Select";
+import { UploadIcon, XIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import type { Product, CookiePiece, CookieBox } from "@/domain/entities/product";
+import { useTranslations } from 'next-intl';
 
 interface ProductFormProps {
   mode: "add" | "edit";
@@ -12,11 +14,19 @@ interface ProductFormProps {
   onSubmit?: (data: Partial<Product>) => void;
 }
 
+// Type for included cookie entry
+interface IncludedCookie {
+  cookiePieceId: string;
+  quantity: number;
+}
+
 export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
   const router = useRouter();
+  const t = useTranslations();
   const isEdit = mode === "edit";
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [availableCookies, setAvailableCookies] = React.useState<CookiePiece[]>([]);
 
   const [formData, setFormData] = React.useState({
     name: initialData?.name || "",
@@ -31,10 +41,30 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
     isNew: (initialData as CookiePiece)?.isNew || false,
     isSoldOut: (initialData as CookiePiece)?.isSoldOut || false,
     // Box-specific
-    includedCookies: (initialData as CookieBox)?.includedCookies || [],
+    includedCookies: ((initialData as CookieBox)?.includedCookies || []) as IncludedCookie[],
   });
 
   const [images, setImages] = React.useState<string[]>(initialData?.images || []);
+
+  // Fetch available cookies when type is box
+  React.useEffect(() => {
+    if (formData.type === "box") {
+      fetch("/api/products/cookies")
+        .then((res) => res.json())
+        .then((result) => {
+          if (result.success) {
+            setAvailableCookies(result.data);
+          }
+        })
+        .catch((err) => console.error("Failed to fetch cookies:", err));
+    }
+  }, [formData.type]);
+
+  // Prepare cookie options for Select
+  const cookieOptions = availableCookies.map((cookie) => ({
+    value: cookie.id,
+    label: cookie.name,
+  }));
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -87,6 +117,37 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value,
+    }));
+  };
+
+  // Add a new cookie entry to the box
+  const handleAddCookie = () => {
+    if (availableCookies.length === 0) return;
+    
+    setFormData((prev) => ({
+      ...prev,
+      includedCookies: [
+        ...prev.includedCookies,
+        { cookiePieceId: availableCookies[0].id, quantity: 1 },
+      ],
+    }));
+  };
+
+  // Update a cookie entry
+  const handleUpdateCookie = (index: number, field: keyof IncludedCookie, value: string | number) => {
+    setFormData((prev) => ({
+      ...prev,
+      includedCookies: prev.includedCookies.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item
+      ),
+    }));
+  };
+
+  // Remove a cookie entry
+  const handleRemoveCookie = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      includedCookies: prev.includedCookies.filter((_, i) => i !== index),
     }));
   };
 
@@ -146,59 +207,6 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* <div className="space-y-4 rounded-3xl border border-[#E8D5C0] bg-white p-6">
-        <h2 className="text-lg font-bold text-[#2C1810]">Product Images</h2>
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleImageUpload}
-          accept="image/*"
-          className="hidden"
-        />
-
-        <div className="flex flex-wrap gap-3">
-          {images.map((imageUrl, index) => (
-            <div
-              key={index}
-              className="group relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-xl border-2 border-[#E8D5C0] bg-[#FDF6EE]"
-            >
-               <img src={imageUrl} alt={`Product ${index + 1}`} className="h-20 w-20 p-1" />
-              <button
-                type="button"
-                onClick={() => handleRemoveImage(index)}
-                className="absolute top-1 right-1 z-10 cursor-pointer rounded-full bg-red-500 p-1 text-white opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
-              >
-                <XIcon className="h-3 w-3" />
-              </button>
-              {index === 0 && (
-                <span className="absolute bottom-1 left-1 rounded bg-[#F4538A] px-1.5 py-0.5 text-[9px] font-semibold text-white">
-                  Main
-                </span>
-              )}
-            </div>
-          ))}
-
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="flex h-24 w-24 flex-shrink-0 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[#E8D5C0] transition-colors hover:border-[#F4538A] hover:bg-[#FFF0F5] disabled:opacity-50"
-          >
-            {isUploading ? (
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#F4538A] border-t-transparent" />
-            ) : (
-              <>
-                <UploadIcon className="h-5 w-5 text-[#A07850]" />
-                <span className="px-1 text-center text-[10px] leading-tight font-medium text-[#A07850]">
-                  Add photo
-                </span>
-              </>
-            )}
-          </button>
-        </div>
-      </div>
- */}
       {/* Basic Info */}
       <div className="space-y-6 rounded-3xl border border-[#E8D5C0] bg-white p-6">
         <h2 className="text-lg font-bold text-[#2C1810]">Basic Information</h2>
@@ -361,6 +369,74 @@ export function ProductForm({ mode, initialData, onSubmit }: ProductFormProps) {
               <span className="font-medium text-[#2C1810]">Sold Out</span>
             </label>
           </div>
+        </div>
+      )}
+
+      {/* Box-specific fields */}
+      {formData.type === "box" && (
+        <div className="space-y-6 rounded-3xl border border-[#E8D5C0] bg-white p-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-[#2C1810]">
+              {t('admin.products.form.includedCookies')}
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleAddCookie}
+              disabled={availableCookies.length === 0}
+            >
+              <PlusIcon className="h-4 w-4 mr-1" />
+              {t('admin.products.form.addCookie')}
+            </Button>
+          </div>
+
+          {formData.includedCookies.length === 0 ? (
+            <p className="text-sm text-[#A07850]">
+              {t('admin.products.form.selectCookies')}
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {formData.includedCookies.map((item, index) => (
+                <div key={index} className="flex items-center gap-4 p-4 bg-[#FDF6EE] rounded-2xl">
+                  <div className="flex-1">
+                    <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                      {t('admin.products.form.selectCookies')}
+                    </label>
+                    <Select
+                      value={item.cookiePieceId}
+                      onChange={(value) => handleUpdateCookie(index, 'cookiePieceId', value)}
+                      options={cookieOptions}
+                      placeholder={t('admin.products.form.selectCookies')}
+                      size="md"
+                      variant="default"
+                    />
+                  </div>
+                  <div className="w-24">
+                    <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+                      {t('admin.products.form.cookieQuantity')}
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={item.quantity}
+                      onChange={(e) => handleUpdateCookie(index, 'quantity', parseInt(e.target.value) || 1)}
+                      className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+                    />
+                  </div>
+                  <div className="pt-6">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCookie(index)}
+                      className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                    >
+                      <Trash2Icon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

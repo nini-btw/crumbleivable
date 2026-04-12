@@ -303,7 +303,13 @@
         "save": "Save Changes",
         "create": "Create Product",
         "sold": "sold",
-        "active": "active"
+        "active": "active",
+        "items": "Items",
+        "selectCookies": "Select Cookies",
+        "cookieQuantity": "Quantity",
+        "addCookie": "Add Cookie",
+        "removeCookie": "Remove",
+        "includedCookies": "Included Cookies"
       },
       "actions": "Actions"
     },

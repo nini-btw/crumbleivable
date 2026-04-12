@@ -61,7 +61,16 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
       return;
     }
 
-    dispatch(addItem({ product, quantity }));
+    // Serialize product to avoid Redux non-serializable value errors
+    // Convert Date objects to ISO strings
+    const serializedProduct = {
+      ...product,
+      createdAt: product.createdAt ? new Date(product.createdAt).toISOString() : null,
+      updatedAt: product.updatedAt ? new Date(product.updatedAt).toISOString() : null,
+    };
+
+    // Cast to unknown first to bypass type checking, then to Product
+    dispatch(addItem({ product: serializedProduct as unknown as Product, quantity }));
     dispatch(
       addToast({
         message: `${quantity}x ${product.name} ${t("product.added")}`,
@@ -72,7 +81,7 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
   };
 
   return (
-    <div className="my-4 grid gap-12 lg:grid-cols-2">
+    <div data-testid="product-detail" className="my-4 grid gap-12 lg:grid-cols-2">
       {/* Images */}
       <motion.div
         initial={{ opacity: 0, x: -20 }}

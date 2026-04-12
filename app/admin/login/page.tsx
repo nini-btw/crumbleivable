@@ -64,16 +64,17 @@ function LoginForm() {
           <h2 className="mb-6 text-xl font-bold text-[#2C1810]">Sign In</h2>
 
           {error && (
-            <div className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
+            <div data-testid="login-error" className="mb-6 flex items-center gap-3 rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-600">
               <AlertCircleIcon className="h-5 w-5 flex-shrink-0" />
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
             <Input
               label="Email"
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -82,6 +83,7 @@ function LoginForm() {
             <Input
               label="Password"
               type="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -93,6 +95,7 @@ function LoginForm() {
               size="lg"
               isLoading={isLoading}
               className="mt-2 cursor-pointer"
+              data-testid="login-button"
             >
               Sign In
             </Button>

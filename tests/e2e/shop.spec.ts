@@ -6,12 +6,13 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Shop Page", () => {
-  test("loads with at least one product card visible", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await page.goto("/shop");
-    
     // Wait for products to load
     await page.waitForSelector('[data-testid="product-card"]');
-    
+  });
+
+  test("loads with at least one product card visible", async ({ page }) => {
     // At least one product card should be visible
     const productCards = page.locator('[data-testid="product-card"]');
     await expect(productCards.first()).toBeVisible();
@@ -21,8 +22,6 @@ test.describe("Shop Page", () => {
   test("inactive product does not appear on shop page", async ({ page }) => {
     // This test assumes an inactive product exists in the database
     // The inactive product should not be visible
-    await page.goto("/shop");
-    
     const inactiveProductName = "Inactive Test Product";
     const inactiveProduct = page.locator(`text=${inactiveProductName}`);
     
@@ -31,11 +30,6 @@ test.describe("Shop Page", () => {
   });
 
   test("clicking product card navigates to product detail page", async ({ page }) => {
-    await page.goto("/shop");
-    
-    // Wait for products to load
-    await page.waitForSelector('[data-testid="product-card"]');
-    
     // Click first product card
     const firstProduct = page.locator('[data-testid="product-card"]').first();
     await firstProduct.click();

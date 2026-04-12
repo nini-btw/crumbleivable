@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
       drop = await dropRepository.getCurrent();
     }
     
-    // For public API, hide unrevealed drop details
+    // For public API, hide unrevealed drop details but include product name for countdown
     if (drop && !drop.revealedAt) {
       return NextResponse.json({
         success: true,
@@ -51,7 +51,10 @@ export async function GET(request: NextRequest) {
           isActive: drop.isActive,
           revealedAt: drop.revealedAt,
           createdAt: drop.createdAt,
-          // Exclude product and productId for unrevealed drops
+          // Include minimal product info for countdown display
+          product: drop.product ? {
+            name: drop.product.name
+          } : undefined
         }
       });
     }

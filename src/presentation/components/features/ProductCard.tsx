@@ -48,7 +48,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
       if (cookie.isSoldOut) return;
     }
 
-    dispatch(addItem({ product, quantity: 1 }));
+    // Serialize product to avoid Redux non-serializable value errors
+    const serializedProduct = {
+      ...product,
+      createdAt: product.createdAt ? new Date(product.createdAt).toISOString() : null,
+      updatedAt: product.updatedAt ? new Date(product.updatedAt).toISOString() : null,
+    };
+
+    // Cast to unknown first to bypass type checking, then to Product
+    dispatch(addItem({ product: serializedProduct as unknown as Product, quantity: 1 }));
     dispatch(
       addToast({
         message: `${product.name} ${t("product.added")}`,
@@ -90,6 +98,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
       initial="initial"
       animate="animate"
       transition={{ delay: index * 0.05 }}
+      data-testid="product-card"
+      data-product-type={product.type}
     >
       <Link href={`/shop/${product.slug}`} className="cursor-pointer">
         <Card className="group flex h-full cursor-pointer flex-col">
@@ -132,6 +142,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, index = 0 }) 
                 className="cursor-pointer !rounded-full !p-2.5"
                 onClick={handleAddToCart}
                 disabled={badge === t("shop.soldOut")}
+                data-testid="add-to-cart-button"
               >
                 <PlusIcon className="h-4 w-4" />
               </Button>

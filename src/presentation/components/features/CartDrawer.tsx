@@ -156,7 +156,7 @@ export const CartDrawer: React.FC = () => {
 
             {!canCheckout && items.length > 0 && (
               <div className="mx-5 mb-3 rounded-2xl border border-[#FFD6E7] bg-[#FFF0F5] p-4">
-                <p className="text-center text-sm font-medium text-[#5C3D2E]">
+                <p data-testid="cookies-needed" className="text-center text-sm font-medium text-[#5C3D2E]">
                   {t("build.completeSelection")}: {cookiesNeeded} 🍪
                 </p>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#FFD6E7]">
@@ -181,6 +181,7 @@ export const CartDrawer: React.FC = () => {
                   fullWidth
                   disabled={!canCheckout && items.length > 0}
                   className="cursor-pointer"
+                  data-testid="checkout-button"
                 >
                   {canCheckout ? t("cart.checkout") : `${t("build.completeSelection")} (${cookiesNeeded})`}
                 </Button>

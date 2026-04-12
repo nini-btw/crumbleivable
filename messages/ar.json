@@ -303,7 +303,13 @@
         "save": "حفظ التغييرات",
         "create": "إنشاء منتج",
         "sold": "مباع",
-        "active": "نشط"
+        "active": "نشط",
+        "items": "عناصر",
+        "selectCookies": "اختر الكوكيز",
+        "cookieQuantity": "الكمية",
+        "addCookie": "إضافة كوكي",
+        "removeCookie": "إزالة",
+        "includedCookies": "الكوكيز المضمنة"
       },
       "actions": "إجراءات"
     },

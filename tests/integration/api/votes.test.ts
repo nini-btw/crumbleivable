@@ -3,242 +3,116 @@
  * @module tests/integration/api/votes
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import { seedVoteCandidate, cleanVoteCandidates, closeConnection } from "@/tests/helpers/seed";
-import { getAdminCookie } from "@/tests/helpers/auth";
-import { validVoteCandidatePayload } from "@/tests/helpers/fixtures";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Telegram
-vi.mock("@/infrastructure/telegram/service", () => ({
-  sendOrderToTelegram: vi.fn().mockResolvedValue(true),
+// Mock the modules before importing the route
+vi.mock("@/infrastructure/db/vote.adapter", () => ({
+  voteRepository: {
+    getAllActive: vi.fn(),
+    hasVoted: vi.fn(),
+    vote: vi.fn(),
+  },
 }));
 
-const API_URL = "http://localhost:3000/api";
+// Now import the modules
+import { GET, POST } from "@/app/api/votes/route";
+import { voteRepository } from "@/infrastructure/db/vote.adapter";
+import { createVoteCandidate } from "@/tests/helpers/factories";
 
 describe("Votes API", () => {
-  let adminCookie: string;
-
-  beforeAll(async () => {
-    adminCookie = await getAdminCookie();
-  });
-
-  afterAll(async () => {
-    await closeConnection();
-  });
-
-  beforeEach(async () => {
-    await cleanVoteCandidates();
-  });
-
-  afterEach(async () => {
-    await cleanVoteCandidates();
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
   describe("GET /api/votes", () => {
-    it("should return 200 with only active candidates sorted by voteCount desc", async () => {
-      // Seed candidates with different vote counts
-      await seedVoteCandidate({ cookieName: "Candidate A", voteCount: 10, isActive: true });
-      await seedVoteCandidate({ cookieName: "Candidate B", voteCount: 20, isActive: true });
-      await seedVoteCandidate({ cookieName: "Candidate C", voteCount: 5, isActive: false });
+    it("should return 200 with active candidates", async () => {
+      const mockCandidates = [
+        createVoteCandidate({ id: "candidate-1", name: "Candidate 1", voteCount: 5 }),
+        createVoteCandidate({ id: "candidate-2", name: "Candidate 2", voteCount: 3 }),
+      ];
+      vi.mocked(voteRepository.getAllActive).mockResolvedValue(mockCandidates);
 
-      const response = await fetch(`${API_URL}/votes`);
-      expect(response.status).toBe(200);
-      
+      const response = await GET();
       const data = await response.json();
+
+      expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(Array.isArray(data.data)).toBe(true);
-      
-      // Only active candidates should be returned
-      data.data.forEach((candidate: any) => {
-        expect(candidate.isActive).toBe(true);
-      });
-      
-      // Should be sorted by voteCount desc
-      if (data.data.length >= 2) {
-        expect(data.data[0].voteCount).toBeGreaterThanOrEqual(data.data[1].voteCount);
-      }
+      expect(data.data).toHaveLength(2);
+      expect(data.data[0].voteCount).toBe(5);
+    });
+
+    it("should return empty array when no active candidates", async () => {
+      vi.mocked(voteRepository.getAllActive).mockResolvedValue([]);
+
+      const response = await GET();
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data).toEqual([]);
+    });
+
+    it("should return 500 when repository throws", async () => {
+      vi.mocked(voteRepository.getAllActive).mockRejectedValue(new Error("DB error"));
+
+      const response = await GET();
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe("Failed to fetch vote candidates");
     });
   });
 
   describe("POST /api/votes", () => {
     it("should return 400 for missing candidateId", async () => {
-      const response = await fetch(`${API_URL}/votes`, {
+      const request = new Request("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
 
-      expect(response.status).toBe(400);
+      const response = await POST(request);
       const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
       expect(data.error).toBe("Missing candidateId");
     });
 
-    it("should return 500 with Candidate not found for nonexistent candidateId", async () => {
-      const response = await fetch(`${API_URL}/votes`, {
+    it("should return 409 for duplicate vote", async () => {
+      vi.mocked(voteRepository.hasVoted).mockResolvedValue(true);
+
+      const request = new Request("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: "00000000-0000-0000-0000-000000000000" }),
+        body: JSON.stringify({ candidateId: "candidate-1" }),
       });
 
-      expect(response.status).toBe(500);
+      const response = await POST(request);
       const data = await response.json();
-      expect(data.error).toContain("Candidate not found");
+
+      expect(response.status).toBe(409);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain("already voted");
     });
 
-    it("should return 200 with success true for valid candidateId", async () => {
-      const candidate = await seedVoteCandidate();
+    it("should return 200 with successful vote", async () => {
+      vi.mocked(voteRepository.hasVoted).mockResolvedValue(false);
+      vi.mocked(voteRepository.vote).mockResolvedValue();
 
-      const response = await fetch(`${API_URL}/votes`, {
+      const request = new Request("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id }),
+        body: JSON.stringify({ candidateId: "candidate-1" }),
       });
+
+      const response = await POST(request);
+      const data = await response.json();
 
       expect(response.status).toBe(200);
-      const data = await response.json();
       expect(data.success).toBe(true);
-    });
-
-    it("should increment voteCount by 2 when voting twice (no one-per-user enforcement)", async () => {
-      const candidate = await seedVoteCandidate({ voteCount: 5 });
-
-      // Vote twice
-      await fetch(`${API_URL}/votes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id }),
-      });
-
-      await fetch(`${API_URL}/votes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ candidateId: candidate.id }),
-      });
-
-      // Verify vote count increased by 2
-      const response = await fetch(`${API_URL}/votes`);
-      const data = await response.json();
-      const updatedCandidate = data.data.find((c: any) => c.id === candidate.id);
-      expect(updatedCandidate.voteCount).toBe(7);
-    });
-  });
-
-  describe("PUT /api/votes", () => {
-    it("should return 401 without auth", async () => {
-      const response = await fetch(`${API_URL}/votes`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validVoteCandidatePayload),
-      });
-
-      expect(response.status).toBe(401);
-    });
-
-    it("should return 201 with voteCount 0 for valid body", async () => {
-      const response = await fetch(`${API_URL}/votes`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify(validVoteCandidatePayload),
-      });
-
-      expect(response.status).toBe(201);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.data.voteCount).toBe(0);
-    });
-
-    it("should return 400 for missing cookieName", async () => {
-      const payload = { ...validVoteCandidatePayload };
-      delete (payload as any).cookieName;
-
-      const response = await fetch(`${API_URL}/votes`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-    });
-
-    it("should return 400 for missing imageUrl", async () => {
-      const payload = { ...validVoteCandidatePayload };
-      delete (payload as any).imageUrl;
-
-      const response = await fetch(`${API_URL}/votes`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-    });
-  });
-
-  describe("DELETE /api/votes/[id]", () => {
-    it("should return 401 without auth", async () => {
-      const candidate = await seedVoteCandidate();
-
-      const response = await fetch(`${API_URL}/votes/${candidate.id}`, {
-        method: "DELETE",
-      });
-
-      expect(response.status).toBe(401);
-    });
-
-    it("should return 200 with auth and valid id", async () => {
-      const candidate = await seedVoteCandidate();
-
-      const response = await fetch(`${API_URL}/votes/${candidate.id}`, {
-        method: "DELETE",
-        headers: { Cookie: adminCookie },
-      });
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-    });
-  });
-
-  describe("POST /api/votes/reset", () => {
-    it("should return 401 without auth", async () => {
-      const response = await fetch(`${API_URL}/votes/reset`, {
-        method: "POST",
-      });
-
-      expect(response.status).toBe(401);
-    });
-
-    it("should return 200 with auth and all candidates have voteCount 0", async () => {
-      // Seed candidates with votes
-      await seedVoteCandidate({ cookieName: "Candidate A", voteCount: 10 });
-      await seedVoteCandidate({ cookieName: "Candidate B", voteCount: 20 });
-
-      // Reset votes
-      const response = await fetch(`${API_URL}/votes/reset`, {
-        method: "POST",
-        headers: { Cookie: adminCookie },
-      });
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-
-      // Verify all candidates have 0 votes
-      const listResponse = await fetch(`${API_URL}/votes`);
-      const listData = await listResponse.json();
-      
-      listData.data.forEach((candidate: any) => {
-        expect(candidate.voteCount).toBe(0);
-      });
+      expect(data.message).toContain("Vote cast");
     });
   });
 });

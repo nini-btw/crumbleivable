@@ -303,7 +303,13 @@
         "save": "Enregistrer",
         "create": "Créer",
         "sold": "vendus",
-        "active": "actif"
+        "active": "actif",
+        "items": "Articles",
+        "selectCookies": "Sélectionner les cookies",
+        "cookieQuantity": "Quantité",
+        "addCookie": "Ajouter un cookie",
+        "removeCookie": "Supprimer",
+        "includedCookies": "Cookies inclus"
       },
       "actions": "Actions"
     },

@@ -75,10 +75,11 @@ export const Header: React.FC = () => {
               onClick={() => dispatch(toggleCart())}
               className="relative p-2 sm:p-2.5 rounded-full hover:bg-[#FFF0F5] transition-colors cursor-pointer"
               aria-label="Open cart"
+              data-testid="cart-button"
             >
               <ShoppingBagIcon className="w-5 h-5 text-[#2C1810]" />
               {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#F4538A] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center tabular-nums">
+                <span data-testid="cart-count" className="absolute -top-1 -right-1 bg-[#F4538A] text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center tabular-nums">
                   {cartCount}
                 </span>
               )}

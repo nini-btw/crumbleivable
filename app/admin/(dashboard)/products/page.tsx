@@ -218,16 +218,32 @@ function ProductModal({
             </div>
           </div>
 
+          <div>
+            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
+              {t("admin.products.form.nameLabel")} *
+            </label>
+            <input
+              type="text"
+              name="name"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+            />
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                {t("admin.products.form.nameLabel")} *
+                Slug *
               </label>
               <input
                 type="text"
+                name="slug"
                 required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                value={formData.slug}
+                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                placeholder="product-slug"
                 className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
               />
             </div>
@@ -238,6 +254,7 @@ function ProductModal({
               </label>
               <input
                 type="number"
+                name="price"
                 required
                 min={0}
                 value={formData.price}
@@ -252,12 +269,13 @@ function ProductModal({
               {t("admin.products.form.description")} *
             </label>
             <textarea
+              name="description"
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={3}
               className="w-full resize-none rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
-            />
+ />
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -314,6 +332,7 @@ function ProductModal({
                 checked={formData.isActive}
                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                 className="h-4 w-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
+                data-testid="product-toggle"
               />
               <span className="text-sm text-[#2C1810]">{t("admin.products.form.activeLabel")}</span>
             </label>
@@ -337,6 +356,7 @@ function ProductModal({
               type="submit"
               isLoading={isSubmitting || isUploading}
               className="flex-1 bg-[#F4538A] hover:bg-[#D63A72]"
+              data-testid="save-product-button"
             >
               {product ? t("admin.products.form.save") : t("admin.products.form.create")}
             </Button>
@@ -603,7 +623,7 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8" dir={isRTL ? "rtl" : "ltr"}>
+    <div data-testid="products-page" className="space-y-6 sm:space-y-8" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -612,7 +632,7 @@ export default function AdminProductsPage() {
           </h1>
           <p className="mt-1 text-[#A07850]">{t("admin.products.subtitle")}</p>
         </div>
-        <Button onClick={handleCreate} className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]">
+        <Button onClick={handleCreate} className="cursor-pointer bg-[#F4538A] hover:bg-[#D63A72]" data-testid="add-product-button">
           <PlusIcon className="mr-2 h-4 w-4" />
           {t("admin.products.addProduct")}
         </Button>
@@ -664,7 +684,7 @@ export default function AdminProductsPage() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-[#2C1810] sm:text-base">
+                        <p data-testid="product-name" className="truncate text-sm font-medium text-[#2C1810] sm:text-base">
                           {product.name}
                         </p>
                         <p className="max-w-[150px] truncate text-xs text-[#A07850] sm:max-w-[200px]">
@@ -682,15 +702,22 @@ export default function AdminProductsPage() {
                     </span>
                   </td>
                   <td className="px-3 py-3 sm:px-6 sm:py-4">
-                    {product.isActive ? (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 sm:px-2.5 sm:py-1">
-                        {t("admin.products.active")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 sm:px-2.5 sm:py-1">
-                        {t("admin.products.inactive")}
-                      </span>
-                    )}
+                    <button
+                      onClick={() => handleEdit({ ...product, isActive: !product.isActive })}
+                      className="cursor-pointer"
+                      data-testid="product-toggle"
+                      title={product.isActive ? t("admin.products.active") : t("admin.products.inactive")}
+                    >
+                      {product.isActive ? (
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 sm:px-2.5 sm:py-1">
+                          {t("admin.products.active")}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 sm:px-2.5 sm:py-1">
+                          {t("admin.products.inactive")}
+                        </span>
+                      )}
+                    </button>
                   </td>
                   <td className="px-3 py-3 sm:px-6 sm:py-4">
                     <div className="flex items-center justify-end gap-1 sm:gap-2">

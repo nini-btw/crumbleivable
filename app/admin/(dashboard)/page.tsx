@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-8" dir={isRTL ? "rtl" : "ltr"}>
+    <div data-testid="admin-dashboard" className="space-y-8" dir={isRTL ? "rtl" : "ltr"}>
       {/* Header */}
       <div>
         <h1 className="font-display text-3xl text-[#2C1810]">{t('admin.dashboard.title')}</h1>

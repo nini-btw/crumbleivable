@@ -133,6 +133,7 @@ export default function VotePage() {
                       key={candidate.id}
                       variants={gridItem}
                       className="flex h-full flex-col overflow-hidden rounded-3xl bg-white shadow-[0_2px_12px_rgba(44,24,16,0.08)]"
+                      data-testid="vote-candidate"
                     >
                       {/* Image Container - Fixed aspect ratio */}
                       <div className="relative flex aspect-square items-center justify-center overflow-hidden bg-[#FFF0F5]">
@@ -180,7 +181,7 @@ export default function VotePage() {
                         {/* Vote Progress - Always at same position */}
                         <div className="mb-4">
                           <div className="mb-1 flex justify-between text-xs text-[#A07850]">
-                            <span>
+                            <span data-testid="vote-count">
                               {candidate.voteCount} {t("vote.votes")}
                             </span>
                             <span>{percentage}%</span>
@@ -204,6 +205,7 @@ export default function VotePage() {
                             isLoading={isLoading === candidate.id}
                             onClick={() => handleVote(candidate.id)}
                             className="cursor-pointer"
+                            data-testid="vote-button"
                           >
                             {hasVoted ? t("vote.voted") : t("vote.vote")}
                           </Button>

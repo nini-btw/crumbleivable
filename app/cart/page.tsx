@@ -157,6 +157,7 @@ export default function CartPage() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className="bg-white rounded-3xl shadow-[0_8px_32px_rgba(44,24,16,0.16)] p-8 text-center"
+            data-testid="order-success"
           >
             <div className="w-20 h-20 mx-auto bg-green-50 rounded-full flex items-center justify-center mb-6">
               <CheckCircleIcon className="w-10 h-10 text-green-500" />
@@ -230,7 +231,7 @@ export default function CartPage() {
 
               {!canCheckout && (
                 <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 mb-6">
-                  <p className="text-brown-700 text-sm font-medium text-center">
+                  <p data-testid="cookies-needed" className="text-brown-700 text-sm font-medium text-center">
                     {t("build.completeSelection")}: {cookiesNeeded} 🍪
                   </p>
                   <div className="mt-2 h-2 bg-pink-100 rounded-full overflow-hidden">
@@ -322,7 +323,7 @@ export default function CartPage() {
                 {t("checkout.title")}
               </h2>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" data-testid="checkout-form">
                 <Input
                   label={t("checkout.fullName")}
                   placeholder={t("checkout.fullName")}
@@ -370,6 +371,7 @@ export default function CartPage() {
                   isLoading={isSubmitting}
                   disabled={!canCheckout}
                   className="cursor-pointer"
+                  data-testid="place-order-button"
                 >
                   {canCheckout ? t("checkout.placeOrder") : `${t("build.completeSelection")} (${cookiesNeeded})`}
                 </Button>

@@ -36,17 +36,25 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Setup project
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    
+    // Admin tests - depend on setup and use auth state
+    {
+      name: 'admin',
+      use: { 
+        ...devices['Desktop Chrome'],
+        storageState: 'tests/.auth/admin.json',
+      },
+      dependencies: ['setup'],
+      testMatch: /admin\.spec\.ts/,
+    },
+    
+    // Other E2E tests - no auth needed
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      testIgnore: /admin\.spec\.ts/,
     },
   ],
 

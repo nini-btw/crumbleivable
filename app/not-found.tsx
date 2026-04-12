@@ -9,7 +9,7 @@ export default function NotFoundPage() {
   const t = useTranslations();
 
   return (
-    <div className="min-h-screen bg-[#FDF6EE] flex flex-col items-center justify-center px-4">
+    <div data-testid="404-page" className="min-h-screen bg-[#FDF6EE] flex flex-col items-center justify-center px-4">
       {/* Background decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-32 h-32 bg-[#F4538A]/5 rounded-full blur-3xl" />

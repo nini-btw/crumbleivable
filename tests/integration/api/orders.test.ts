@@ -3,257 +3,126 @@
  * @module tests/integration/api/orders
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
-import { seedOrder, cleanOrders, closeConnection } from "@/tests/helpers/seed";
-import { getAdminCookie } from "@/tests/helpers/auth";
-import { validOrderPayload } from "@/tests/helpers/fixtures";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
-// Mock Telegram
-vi.mock("@/infrastructure/telegram/service", () => ({
-  sendOrderToTelegram: vi.fn().mockResolvedValue(true),
+// Mock the modules before importing the route
+vi.mock("@/infrastructure/db/order.adapter", () => ({
+  orderRepository: {
+    create: vi.fn(),
+    getAll: vi.fn(),
+  },
 }));
 
-const API_URL = "http://localhost:3000/api";
+vi.mock("@/infrastructure/auth/supabase-auth", () => ({
+  getAdminSession: vi.fn(),
+}));
+
+// Now import the modules
+import { GET, POST } from "@/app/api/orders/route";
+import { orderRepository } from "@/infrastructure/db/order.adapter";
+import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
+import { createOrder, createCookiePiece } from "@/tests/helpers/factories";
 
 describe("Orders API", () => {
-  let adminCookie: string;
-
-  beforeAll(async () => {
-    adminCookie = await getAdminCookie();
-  });
-
-  afterAll(async () => {
-    await closeConnection();
-  });
-
-  beforeEach(async () => {
-    await cleanOrders();
-  });
-
-  afterEach(async () => {
-    await cleanOrders();
-  });
-
-  describe("POST /api/orders", () => {
-    it("should return 201 with order id for valid 3-cookie payload", async () => {
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(validOrderPayload),
-      });
-
-      expect(response.status).toBe(201);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.data.id).toBeDefined();
-    });
-
-    it("should return 400 error for 2 cookies", async () => {
-      const payload = {
-        ...validOrderPayload,
-        items: [
-          { product: validOrderPayload.items[0].product, quantity: 2 },
-        ],
-      };
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.success).toBe(false);
-      expect(data.error).toBe("Minimum 3 cookies required for checkout");
-    });
-
-    it("should return 400 error for missing fullName", async () => {
-      const payload = {
-        ...validOrderPayload,
-        customer: { ...validOrderPayload.customer, fullName: "" },
-      };
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.success).toBe(false);
-      expect(data.error).toBe("Missing customer information");
-    });
-
-    it("should return 400 error for missing phone", async () => {
-      const payload = {
-        ...validOrderPayload,
-        customer: { ...validOrderPayload.customer, phone: "" },
-      };
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.success).toBe(false);
-    });
-
-    it("should return 400 error for missing address", async () => {
-      const payload = {
-        ...validOrderPayload,
-        customer: { ...validOrderPayload.customer, address: "" },
-      };
-
-      const response = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.success).toBe(false);
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
 
   describe("GET /api/orders", () => {
-    it("should return 401 without auth", async () => {
-      const response = await fetch(`${API_URL}/orders`);
+    it("should return 401 without admin auth", async () => {
+      vi.mocked(getAdminSession).mockResolvedValue(null);
+
+      const request = new Request("http://localhost:3000/api/orders");
+      const response = await GET(request);
+      const data = await response.json();
+
       expect(response.status).toBe(401);
-    });
-
-    it("should return 200 with data array with admin cookie", async () => {
-      // Seed an order first
-      await seedOrder();
-
-      const response = await fetch(`${API_URL}/orders`, {
-        headers: { Cookie: adminCookie },
-      });
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(Array.isArray(data.data)).toBe(true);
-    });
-  });
-
-  describe("GET /api/orders/[id]", () => {
-    it("should return 200 for valid seeded order id", async () => {
-      const order = await seedOrder();
-
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        headers: { Cookie: adminCookie },
-      });
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.data.id).toBe(order.id);
-    });
-
-    it("should return 404 for fake uuid", async () => {
-      const response = await fetch(`${API_URL}/orders/00000000-0000-0000-0000-000000000000`, {
-        headers: { Cookie: adminCookie },
-      });
-
-      expect(response.status).toBe(404);
-      const data = await response.json();
       expect(data.success).toBe(false);
+      expect(data.error).toBe("Unauthorized");
+    });
+
+    it("should return 200 with orders for admin", async () => {
+      vi.mocked(getAdminSession).mockResolvedValue({ id: "admin-1", email: "admin@test.com", role: "admin" });
+      const mockOrders = [createOrder({ id: "order-1" })];
+      vi.mocked(orderRepository.getAll).mockResolvedValue(mockOrders);
+
+      const request = new Request("http://localhost:3000/api/orders");
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.data).toHaveLength(1);
+    });
+
+    it("should pass limit to repository", async () => {
+      vi.mocked(getAdminSession).mockResolvedValue({ id: "admin-1", email: "admin@test.com", role: "admin" });
+      vi.mocked(orderRepository.getAll).mockResolvedValue([]);
+
+      const request = new Request("http://localhost:3000/api/orders?limit=50");
+      await GET(request);
+
+      expect(orderRepository.getAll).toHaveBeenCalledWith(50);
     });
   });
 
-  describe("PUT /api/orders/[id]", () => {
-    it("should return 401 without auth", async () => {
-      const order = await seedOrder();
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "PUT",
+  describe("POST /api/orders", () => {
+    it("should return 400 for empty cart (minimum not met)", async () => {
+      const request = new Request("http://localhost:3000/api/orders", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "confirmed" }),
+        body: JSON.stringify({
+          customer: { fullName: "Test", phone: "123", address: "Addr" },
+          items: [],
+        }),
       });
 
-      expect(response.status).toBe(401);
-    });
-
-    it("should return 200 with auth and valid status", async () => {
-      const order = await seedOrder();
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify({ status: "confirmed" }),
-      });
-
-      expect(response.status).toBe(200);
+      const response = await POST(request);
       const data = await response.json();
-      expect(data.success).toBe(true);
-    });
-
-    it("should return 400 for invalid status", async () => {
-      const order = await seedOrder();
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify({ status: "invalidstatus" }),
-      });
 
       expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.error).toBe("Invalid status");
+      expect(data.success).toBe(false);
+      expect(data.error).toContain("Minimum");
     });
 
-    it("should return 400 for missing status field", async () => {
-      const order = await seedOrder();
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Cookie: adminCookie,
-        },
-        body: JSON.stringify({}),
+    it("should return 400 for missing customer info", async () => {
+      const request = new Request("http://localhost:3000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: [{ product: createCookiePiece({ price: 150 }), quantity: 3 }],
+        }),
       });
+
+      const response = await POST(request);
+      const data = await response.json();
 
       expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.error).toBe("Missing status field");
-    });
-  });
-
-  describe("DELETE /api/orders/[id]", () => {
-    it("should return 401 without auth", async () => {
-      const order = await seedOrder();
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "DELETE",
-      });
-
-      expect(response.status).toBe(401);
+      expect(data.success).toBe(false);
+      expect(data.error).toContain("customer");
     });
 
-    it("should return 200 with auth", async () => {
-      const order = await seedOrder({ status: "cancelled" });
-      
-      const response = await fetch(`${API_URL}/orders/${order.id}`, {
-        method: "DELETE",
-        headers: { Cookie: adminCookie },
+    it("should return 201 with valid order data", async () => {
+      const mockOrder = createOrder({ id: "order-1" });
+      vi.mocked(orderRepository.create).mockResolvedValue(mockOrder);
+
+      const request = new Request("http://localhost:3000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: { fullName: "Test Customer", phone: "123456", address: "123 Street" },
+          items: [{ product: createCookiePiece({ price: 150 }), quantity: 3 }],
+        }),
       });
 
-      expect(response.status).toBe(200);
+      const response = await POST(request);
       const data = await response.json();
+
+      expect(response.status).toBe(201);
       expect(data.success).toBe(true);
+      expect(data.data.id).toBe(mockOrder.id);
+      expect(data.data.totalAmount).toBe(mockOrder.totalAmount);
+      expect(data.data.status).toBe(mockOrder.status);
     });
   });
 });

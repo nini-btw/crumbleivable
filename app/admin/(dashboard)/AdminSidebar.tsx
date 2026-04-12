@@ -85,6 +85,7 @@ export const AdminSidebar: React.FC<{
                     ? "bg-[#F4538A] text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
+                data-testid={item.href === "/admin/products" ? "nav-products" : undefined}
               >
                 <Icon className="h-5 w-5" />
                 {t(item.labelKey)}
