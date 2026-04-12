@@ -31,14 +31,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: drops });
     }
     
-    // Get current active drop
+    // Get current active drop (earliest scheduled, non-revealed)
     let drop = await dropRepository.getCurrent();
     
     // Auto-reveal if scheduled time has passed
-    if (drop && !drop.revealedAt && new Date(drop.scheduledAt) < new Date()) {
-      await dropRepository.markRevealed(drop.id);
-      // Refresh to get updated data
-      drop = await dropRepository.getCurrent();
+    if (drop && !drop.revealedAt) {
+      const scheduledTime = new Date(drop.scheduledAt).getTime();
+      const now = Date.now();
+      
+      if (scheduledTime <= now) {
+        console.log(`[Auto-Reveal] Drop ${drop.id} scheduled for ${drop.scheduledAt} is now live. Activating product...`);
+        await dropRepository.markRevealed(drop.id);
+        // Refresh to get updated data (product is now active and marked as new)
+        drop = await dropRepository.getCurrent();
+        console.log(`[Auto-Reveal] Drop revealed successfully`);
+      }
     }
     
     // For public API, hide unrevealed drop details but include product name for countdown

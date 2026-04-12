@@ -15,15 +15,20 @@ function ActiveDropCard({
   drop, 
   product, 
   onCancel,
+  onReveal,
+  isRevealing,
   t 
 }: { 
   drop: WeeklyDrop; 
   product: Product | null; 
   onCancel: () => void;
+  onReveal: () => void;
+  isRevealing: boolean;
   t: (key: string) => string;
 }) {
   const scheduledDate = new Date(drop.scheduledAt);
-  const isRevealed = drop.revealedAt || new Date() >= scheduledDate;
+  const isLive = new Date() >= scheduledDate;
+  const isRevealed = !!drop.revealedAt;
 
   return (
     <div className="bg-white rounded-3xl border border-[#E8D5C0] p-4 sm:p-6">
@@ -44,13 +49,17 @@ function ActiveDropCard({
       </div>
 
       <div className="bg-[#F0E6D6]/30 rounded-2xl p-4 text-center sm:p-6 mb-4">
-        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#FFF0F5] px-4 py-2 text-[#F4538A]">
+        <div className={`mb-4 inline-flex items-center gap-2 rounded-full px-4 py-2 ${isLive && !isRevealed ? 'bg-green-100 text-green-800 animate-pulse' : 'bg-[#FFF0F5] text-[#F4538A]'}`}>
           <ClockIcon className="w-4 h-4" />
           <span className="text-xs font-bold tracking-widest uppercase">
-            {isRevealed ? t('admin.drop.revealed') : t('admin.drop.countdownPreview')}
+            {isRevealed ? t('admin.drop.revealed') : isLive ? t('admin.drop.dropLive') : t('admin.drop.countdownPreview')}
           </span>
         </div>
-        <CountdownTimer targetDate={scheduledDate} size="sm" />
+        {isLive && !isRevealed ? (
+          <div className="text-3xl font-bold text-green-600">LIVE NOW</div>
+        ) : (
+          <CountdownTimer targetDate={scheduledDate} size="sm" />
+        )}
       </div>
 
       {product && (
@@ -67,12 +76,33 @@ function ActiveDropCard({
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-[#2C1810] truncate">{product.name}</h3>
             <p className="text-sm text-[#A07850]">{product.price} {t('common.currency')}</p>
-            <p className="text-xs text-[#A07850] truncate">{scheduledDate.toLocaleString()}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs text-[#A07850] truncate">{scheduledDate.toLocaleString()}</p>
+              {isRevealed && (
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${product.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                  {product.isActive ? t('admin.products.active') : t('admin.products.inactive')}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-      {!isRevealed && (
+      {/* Show reveal button when live but not yet revealed */}
+      {isLive && !drop.revealedAt && (
+        <Button
+          fullWidth
+          onClick={onReveal}
+          disabled={isRevealing}
+          className="mt-4 bg-green-500 hover:bg-green-600"
+        >
+          <SparklesIcon className="w-4 h-4 mr-2" />
+          {isRevealing ? t('common.loading') : t('admin.drop.revealNow')}
+        </Button>
+      )}
+
+      {/* Show cancel button only for future drops */}
+      {!isLive && !drop.revealedAt && (
         <Button
           variant="ghost"
           fullWidth
@@ -109,6 +139,7 @@ export default function AdminDropPage() {
   const [scheduledTime, setScheduledTime] = useState("");
   const [selectedProduct, setSelectedProduct] = useState("");
   const [previewDate, setPreviewDate] = useState<Date | null>(null);
+  const [isRevealing, setIsRevealing] = useState(false);
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -123,20 +154,21 @@ export default function AdminDropPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [cookiesRes, productsRes, dropsRes] = await Promise.all([
-          fetch("/api/products/cookies"),
-          fetch("/api/products"),
+        const [productsRes, dropsRes] = await Promise.all([
+          fetch("/api/admin/products"),
           fetch("/api/drops?all=true"),
         ]);
 
-        const [cookiesData, productsData, dropsData] = await Promise.all([
-          cookiesRes.json(),
+        const [productsData, dropsData] = await Promise.all([
           productsRes.json(),
           dropsRes.json(),
         ]);
 
-        if (cookiesData.success) setCookies(cookiesData.data);
-        if (productsData.success) setProducts(productsData.data);
+        // Filter to cookies for drop scheduling, keep all products for display
+        if (productsData.success) {
+          setCookies(productsData.data.filter((p: Product) => p.type === "cookie"));
+          setProducts(productsData.data);
+        }
         if (dropsData.success && Array.isArray(dropsData.data)) {
           setDrops(dropsData.data);
         } else {
@@ -222,9 +254,38 @@ export default function AdminDropPage() {
     }
   };
 
-  // Get active drop (most recent non-cancelled)
+  const handleRevealDrop = async (dropId: string) => {
+    if (!confirm(t('admin.drop.confirmReveal'))) return;
+
+    setIsRevealing(true);
+    try {
+      const response = await fetch(`/api/drops/${dropId}/reveal`, {
+        method: "POST",
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert(t('admin.drop.revealedSuccess'));
+        // Refresh drops
+        const dropsRes = await fetch("/api/drops?all=true");
+        const dropsData = await dropsRes.json();
+        if (dropsData.success && Array.isArray(dropsData.data)) {
+          setDrops(dropsData.data);
+        }
+      } else {
+        alert(result.error || t('admin.common.error'));
+      }
+    } catch (error) {
+      console.error("Failed to reveal drop:", error);
+      alert(t('admin.common.error'));
+    } finally {
+      setIsRevealing(false);
+    }
+  };
+
+  // Get active drop (most recent non-cancelled, non-revealed - includes live and future)
   const activeDrop = drops
-    .filter(d => !d.revealedAt && new Date(d.scheduledAt) > new Date())
+    .filter(d => !d.revealedAt && d.isActive !== false)
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
 
   const activeDropProduct = activeDrop 
@@ -362,6 +423,8 @@ export default function AdminDropPage() {
             drop={activeDrop} 
             product={activeDropProduct}
             onCancel={() => handleCancelDrop(activeDrop.id)}
+            onReveal={() => handleRevealDrop(activeDrop.id)}
+            isRevealing={isRevealing}
             t={t}
           />
         ) : (

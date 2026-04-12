@@ -13,6 +13,11 @@ import type { WeeklyDrop } from "../entities/drop";
  */
 export interface IProductRepository {
   /**
+   * Get all products (including inactive)
+   */
+  getAll(): Promise<Product[]>;
+
+  /**
    * Get all active products
    */
   getAllActive(): Promise<Product[]>;

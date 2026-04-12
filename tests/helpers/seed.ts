@@ -56,10 +56,11 @@ export async function seedOrder(overrides?: Partial<CreateOrderPayload>) {
   // Create order
   const [order] = await db.insert(schema.orders).values(orderData).returning();
 
-  // Create order items
-  const items = overrides?.items || [
-    { productId: "test-1", productType: "cookie" as const, productName: "Cookie 1", productSlug: "cookie-1", quantity: 2, priceSnapshot: 150 },
-    { productId: "test-2", productType: "cookie" as const, productName: "Cookie 2", productSlug: "cookie-2", quantity: 1, priceSnapshot: 150 },
+  // Create order items (using database structure directly)
+  type OrderItemInsert = typeof schema.orderItems.$inferInsert;
+  const items: OrderItemInsert[] = overrides?.items as unknown as OrderItemInsert[] || [
+    { orderId: order.id, productId: "test-1", productType: "cookie", productName: "Cookie 1", productSlug: "cookie-1", quantity: 2, priceSnapshot: 150 },
+    { orderId: order.id, productId: "test-2", productType: "cookie", productName: "Cookie 2", productSlug: "cookie-2", quantity: 1, priceSnapshot: 150 },
   ];
 
   const orderItems = await db
@@ -67,12 +68,12 @@ export async function seedOrder(overrides?: Partial<CreateOrderPayload>) {
     .values(
       items.map((item) => ({
         orderId: order.id,
-        productId: item.productId,
-        productType: item.productType,
-        productName: item.productName,
-        productSlug: item.productSlug,
-        quantity: item.quantity,
-        priceSnapshot: item.priceSnapshot,
+        productId: item.productId!,
+        productType: item.productType!,
+        productName: item.productName!,
+        productSlug: item.productSlug!,
+        quantity: item.quantity!,
+        priceSnapshot: item.priceSnapshot!,
       }))
     )
     .returning();

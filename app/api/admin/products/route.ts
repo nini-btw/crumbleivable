@@ -23,11 +23,9 @@ export async function GET() {
     }
 
     // Get all products (including inactive) from repository
-    const allProducts = await productRepository.getAllCookies();
-    const allBoxes = await productRepository.getAllBoxes();
-    const products = [...allProducts, ...allBoxes];
+    const allProducts = await productRepository.getAll();
 
-    return NextResponse.json({ success: true, data: products });
+    return NextResponse.json({ success: true, data: allProducts });
   } catch (error) {
     console.error("Failed to fetch products:", error);
     return NextResponse.json(

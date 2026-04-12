@@ -29,7 +29,6 @@ describe("Drops API", () => {
     it("should return 200 with current drop info", async () => {
       const mockDrop = createWeeklyDrop({
         id: "drop-1",
-        name: "Weekly Drop",
         revealedAt: new Date("2025-01-15T09:00:00Z"),
       });
       vi.mocked(dropRepository.getCurrent).mockResolvedValue(mockDrop);
@@ -46,8 +45,7 @@ describe("Drops API", () => {
     it("should return 200 with unrevealed drop (public view)", async () => {
       const mockDrop = createWeeklyDrop({
         id: "drop-1",
-        name: "Secret Drop",
-        revealedAt: null,
+        revealedAt: undefined,
       });
       vi.mocked(dropRepository.getCurrent).mockResolvedValue(mockDrop);
 

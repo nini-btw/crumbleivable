@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Mock data for development without database
  * @module infrastructure/db/mock-data
  */
@@ -20,7 +20,7 @@ export const mockCookies: CookiePiece[] = [
     description:
       "Our signature cookie loaded with Belgian chocolate chunks and a sprinkle of sea salt. Crispy edges, chewy center.",
     price: 150,
-    displayPrice: 1.50,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-01-15"),
@@ -38,7 +38,7 @@ export const mockCookies: CookiePiece[] = [
     description:
       "Rich cocoa dough packed with dark chocolate chips and fudge chunks. For the true chocolate lover.",
     price: 170,
-    displayPrice: 1.70,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-01-20"),
@@ -56,7 +56,7 @@ export const mockCookies: CookiePiece[] = [
     description:
       "Creamy white chocolate chunks paired with roasted macadamia nuts. A classic combination.",
     price: 180,
-    displayPrice: 1.80,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-02-01"),
@@ -74,7 +74,7 @@ export const mockCookies: CookiePiece[] = [
     description:
       "Classic red velvet cookie with cream cheese chips. A slice of cake in cookie form.",
     price: 170,
-    displayPrice: 1.70,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-02-10"),
@@ -91,7 +91,7 @@ export const mockCookies: CookiePiece[] = [
     images: ["/images/peanut.png"],
     description: "Creamy peanut butter cookie with chocolate drizzle and Reese's pieces.",
     price: 160,
-    displayPrice: 1.60,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-02-15"),
@@ -108,7 +108,7 @@ export const mockCookies: CookiePiece[] = [
     images: ["/images/ben10.png"],
     description: "Chewy oatmeal cookie with plump raisins, cinnamon, and a hint of nutmeg.",
     price: 150,
-    displayPrice: 1.50,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-02-20"),
@@ -126,7 +126,7 @@ export const mockCookies: CookiePiece[] = [
     description:
       "Buttery cookie with caramel chunks and flaky sea salt. Sweet and salty perfection.",
     price: 170,
-    displayPrice: 1.70,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-03-01"),
@@ -143,7 +143,7 @@ export const mockCookies: CookiePiece[] = [
     images: ["/images/strawbery.png"],
     description: "Colorful funfetti cookie with vanilla frosting swirl. Celebrate every day!",
     price: 160,
-    displayPrice: 1.60,
+
     isActive: true,
     type: "cookie",
     createdAt: new Date("2026-03-05"),
@@ -166,16 +166,16 @@ export const mockBoxes: CookieBox[] = [
     description:
       "A perfect selection of our all-time favorite cookies. 6 cookies including Chocolate Chip, Double Chocolate, and White Chocolate Macadamia.",
     price: 850,
-    displayPrice: 8.50,
+
     isActive: true,
     type: "box",
     images: ["/images/box1.png"],
     createdAt: new Date("2026-01-01"),
     updatedAt: new Date("2026-01-01"),
     includedCookies: [
-      { cookiePieceId: "cookie-1", quantity: 2 },
-      { cookiePieceId: "cookie-2", quantity: 2 },
-      { cookiePieceId: "cookie-3", quantity: 2 },
+      { productId: "cookie-1", productName: "Classic Chocolate Chip", quantity: 2 },
+      { productId: "cookie-2", productName: "Double Chocolate Fudge", quantity: 2 },
+      { productId: "cookie-3", productName: "White Chocolate Macadamia", quantity: 2 },
     ],
   },
   {
@@ -185,16 +185,16 @@ export const mockBoxes: CookieBox[] = [
     description:
       "For the serious chocolate lover. 6 cookies featuring our richest chocolate flavors.",
     price: 900,
-    displayPrice: 9.00,
+
     isActive: true,
     type: "box",
     images: ["/images/box1.png"],
     createdAt: new Date("2026-01-10"),
     updatedAt: new Date("2026-01-10"),
     includedCookies: [
-      { cookiePieceId: "cookie-2", quantity: 3 },
-      { cookiePieceId: "cookie-1", quantity: 2 },
-      { cookiePieceId: "cookie-5", quantity: 1 },
+      { productId: "cookie-2", productName: "Double Chocolate Fudge", quantity: 3 },
+      { productId: "cookie-1", productName: "Classic Chocolate Chip", quantity: 2 },
+      { productId: "cookie-5", productName: "Peanut Butter Paradise", quantity: 1 },
     ],
   },
   {
@@ -203,16 +203,16 @@ export const mockBoxes: CookieBox[] = [
     slug: "variety-pack",
     description: "Can't decide? Get a taste of everything! 9 cookies with 3 of each flavor.",
     price: 1200,
-    displayPrice: 12.00,
+
     isActive: true,
     type: "box",
     images: ["/images/box1.png"],
     createdAt: new Date("2026-02-01"),
     updatedAt: new Date("2026-02-01"),
     includedCookies: [
-      { cookiePieceId: "cookie-1", quantity: 3 },
-      { cookiePieceId: "cookie-3", quantity: 3 },
-      { cookiePieceId: "cookie-6", quantity: 3 },
+      { productId: "cookie-1", productName: "Classic Chocolate Chip", quantity: 3 },
+      { productId: "cookie-3", productName: "White Chocolate Macadamia", quantity: 3 },
+      { productId: "cookie-6", productName: "Oatmeal Raisin", quantity: 3 },
     ],
   },
 ];

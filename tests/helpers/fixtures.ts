@@ -27,7 +27,7 @@ export const validOrderPayload: CreateOrderPayload = {
         slug: "chocolate-chip",
         description: "Classic chocolate chip cookie",
         price: 150,
-        displayPrice: 1.50,
+
         isActive: true,
         type: "cookie",
         images: ["/images/test-cookie.png"],
@@ -45,7 +45,7 @@ export const validOrderPayload: CreateOrderPayload = {
         slug: "double-chocolate",
         description: "Rich double chocolate cookie",
         price: 170,
-        displayPrice: 1.70,
+
         isActive: true,
         type: "cookie",
         images: ["/images/test-cookie.png"],
@@ -62,7 +62,7 @@ export const validOrderPayload: CreateOrderPayload = {
 /**
  * Valid product payload for POST /api/products
  */
-export const validProductPayload: Omit<Product, "id" | "createdAt" | "updatedAt" | "displayPrice"> = {
+export const validProductPayload: Omit<CookiePiece, "id" | "createdAt" | "updatedAt"> = {
   name: "Test Cookie",
   slug: "test-cookie",
   description: "A delicious test cookie",

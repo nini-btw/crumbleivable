@@ -11,8 +11,7 @@ export interface Product {
   name: string;
   slug: string;
   description: string;
-  price: number; // Price in centimes (smallest currency unit)
-  displayPrice: number; // Price in dollars/units (price / 100)
+  price: number; // Price as-is (no conversion)
   isActive: boolean;
   type: ProductType;
   images: string[];
@@ -48,7 +47,9 @@ export interface CookieBox extends Product {
  * Item within a cookie box
  */
 export interface BoxItem {
-  cookiePieceId: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
   quantity: number;
 }
 

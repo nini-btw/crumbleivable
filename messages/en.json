@@ -130,12 +130,14 @@
     "backToShop": "Back to Shop",
     "flavour": "Flavour",
     "allergens": "Allergens",
+    "boxContents": "What's Inside",
     "quantity": "Quantity",
     "addToCart": "Add to Cart",
     "added": "Added to Cart!",
     "related": "You Might Also Like",
     "description": "Description",
-    "ingredients": "Ingredients"
+    "ingredients": "Ingredients",
+    "boxContents": "What's Inside"
   },
   "build": {
     "title": "Build Your Box",
@@ -293,6 +295,7 @@
         "description": "Description",
         "flavour": "Flavour",
         "allergens": "Allergens (comma-separated)",
+        "boxContents": "Box Contents",
         "allergensPlaceholder": "e.g., gluten, dairy, eggs",
         "typeLabel": "Type",
         "cookie": "Cookie",
@@ -309,7 +312,8 @@
         "cookieQuantity": "Quantity",
         "addCookie": "Add Cookie",
         "removeCookie": "Remove",
-        "includedCookies": "Included Cookies"
+        "includedCookies": "Included Cookies",
+        "boxContents": "Box Contents"
       },
       "actions": "Actions"
     },
@@ -332,8 +336,11 @@
       "scheduled": "Scheduled",
       "revealed": "Revealed",
       "cancelDrop": "Cancel Drop",
-      "dropInfo": "The drop will be visible on the home page with a countdown timer. When the time arrives, the product will be automatically revealed.",
-      "dropLive": "🎉 Drop is Live!"
+      "dropInfo": "The drop will be visible on the home page with a countdown timer. When the time arrives, the product will be automatically revealed, activated, and marked as new.",
+      "dropLive": "🎉 Drop is Live!",
+      "revealNow": "Reveal Now",
+      "confirmReveal": "Are you sure you want to reveal this drop now? The product will be activated and marked as new.",
+      "revealedSuccess": "Drop revealed! The product is now active and marked as new in the shop."
     },
     "votes": {
       "title": "Vote Management",

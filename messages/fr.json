@@ -130,12 +130,14 @@
     "backToShop": "Retour à la Boutique",
     "flavour": "Saveur",
     "allergens": "Allergènes",
+    "boxContents": "Contenu de la Boîte",
     "quantity": "Quantité",
     "addToCart": "Ajouter au Panier",
     "added": "Ajouté au Panier !",
     "related": "Vous Pourriez Aussi Aimer",
     "description": "Description",
-    "ingredients": "Ingrédients"
+    "ingredients": "Ingrédients",
+    "boxContents": "Contenu de la Boîte"
   },
   "build": {
     "title": "Créer Votre Boîte",
@@ -293,6 +295,7 @@
         "description": "Description",
         "flavour": "Saveur",
         "allergens": "Allergènes (séparés par des virgules)",
+        "boxContents": "Contenu de la Boîte",
         "allergensPlaceholder": "ex., gluten, produits laitiers, œufs",
         "typeLabel": "Type",
         "cookie": "Cookie",
@@ -309,7 +312,8 @@
         "cookieQuantity": "Quantité",
         "addCookie": "Ajouter un cookie",
         "removeCookie": "Supprimer",
-        "includedCookies": "Cookies inclus"
+        "includedCookies": "Cookies inclus",
+        "boxContents": "Contenu de la Boîte"
       },
       "actions": "Actions"
     },
@@ -332,8 +336,11 @@
       "scheduled": "Planifié",
       "revealed": "Révélé",
       "cancelDrop": "Annuler le Drop",
-      "dropInfo": "Le drop sera visible sur la page d'accueil avec un compte à rebours. Quand l'heure arrivera, le produit sera automatiquement révélé.",
-      "dropLive": "🎉 Le Drop est en Direct !"
+      "dropInfo": "Le drop sera visible sur la page d'accueil avec un compte à rebours. Quand l'heure arrivera, le produit sera automatiquement révélé, activé et marqué comme nouveau.",
+      "dropLive": "🎉 Le Drop est en Direct !",
+      "revealNow": "Révéler Maintenant",
+      "confirmReveal": "Êtes-vous sûr de vouloir révéler ce drop maintenant? Le produit sera activé et marqué comme nouveau.",
+      "revealedSuccess": "Drop révélé! Le produit est maintenant actif et marqué comme nouveau dans la boutique."
     },
     "votes": {
       "title": "Gestion des Votes",

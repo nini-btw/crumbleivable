@@ -71,9 +71,9 @@ describe("Product Entities", () => {
     it("should return true for box with included cookies", () => {
       const box = createCookieBox({
         includedCookies: [
-          { cookiePieceId: "cookie-1", quantity: 2 },
-          { cookiePieceId: "cookie-2", quantity: 1 },
-          { cookiePieceId: "cookie-3", quantity: 3 },
+          { productId: "cookie-1", productName: "Cookie 1", quantity: 2 },
+          { productId: "cookie-2", productName: "Cookie 2", quantity: 1 },
+          { productId: "cookie-3", productName: "Cookie 3", quantity: 3 },
         ],
       });
       expect(isCookieBox(box)).toBe(true);

@@ -51,7 +51,7 @@ export const products = pgTable("products", {
   isSoldOut: boolean("is_sold_out").default(false),
   // Box-specific fields
   includedCookies: jsonb("included_cookies").$type<
-    { cookiePieceId: string; quantity: number }[]
+    { productId: string; productName: string; productImage?: string; quantity: number }[]
   >(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

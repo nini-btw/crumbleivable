@@ -25,7 +25,7 @@ export class DropRepository implements IDropRepository {
       .select()
       .from(weeklyDrops)
       .where(and(eq(weeklyDrops.isActive, true), isNull(weeklyDrops.revealedAt)))
-      .orderBy(desc(weeklyDrops.scheduledAt))
+      .orderBy(weeklyDrops.scheduledAt) // ASC - get the earliest scheduled drop first
       .limit(1);
 
     if (!result[0]) return null;
@@ -98,10 +98,32 @@ export class DropRepository implements IDropRepository {
   async markRevealed(id: string): Promise<void> {
     if (isMockMode) return;
 
+    // Get the drop to find the associated product
+    const dropResult = await db
+      .select()
+      .from(weeklyDrops)
+      .where(eq(weeklyDrops.id, id))
+      .limit(1);
+
+    const drop = dropResult[0];
+
+    // Update the drop as revealed
     await db
       .update(weeklyDrops)
       .set({ revealedAt: new Date() })
       .where(eq(weeklyDrops.id, id));
+
+    // Also activate the product and mark as new
+    if (drop?.productId) {
+      await db
+        .update(products)
+        .set({ 
+          isActive: true, 
+          isNew: true,
+          updatedAt: new Date() 
+        })
+        .where(eq(products.id, drop.productId));
+    }
   }
 
   async cancel(id: string): Promise<void> {

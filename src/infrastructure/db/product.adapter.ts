@@ -16,6 +16,19 @@ const isMockMode = !db;
  * Product repository implementation using Drizzle ORM
  */
 export class ProductRepository implements IProductRepository {
+  async getAll(): Promise<Product[]> {
+    if (isMockMode) {
+      return mockProducts;
+    }
+
+    const result = await db
+      .select()
+      .from(products)
+      .orderBy(desc(products.createdAt));
+
+    return result.map(this.mapToEntity);
+  }
+
   async getAllActive(): Promise<Product[]> {
     if (isMockMode) {
       return mockProducts.filter((p) => p.isActive);
@@ -194,8 +207,7 @@ export class ProductRepository implements IProductRepository {
       name: row.name,
       slug: row.slug,
       description: row.description,
-      price: row.price,
-      displayPrice: row.price / 100, // Price in dollars/units
+      price: row.price, // Price as-is (no conversion)
       isActive: row.isActive,
       type: row.type,
       images: row.images || [],

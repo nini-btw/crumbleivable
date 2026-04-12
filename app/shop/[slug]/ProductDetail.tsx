@@ -42,7 +42,6 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
   const dispatch = useDispatch();
   const t = useTranslations();
   const [quantity, setQuantity] = React.useState(1);
-
   const isCookie = product.type === "cookie";
   const cookie = isCookie ? (product as CookiePiece) : null;
   const box = !isCookie ? (product as CookieBox) : null;
@@ -126,6 +125,16 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
         {/* Cookie-specific info */}
         {isCookie && cookie && (
           <>
+            {/* Flavour */}
+            {cookie.flavour && (
+              <div>
+                <h3 className="text-brown-400 mb-2 text-xs font-bold tracking-widest uppercase">
+                  {t("product.flavour")}
+                </h3>
+                <p className="text-brown-700 text-lg font-medium">{cookie.flavour}</p>
+              </div>
+            )}
+            
             {/* Allergens */}
             {cookie.allergens.length > 0 && (
               <div>
@@ -148,22 +157,22 @@ export const ProductDetail: React.FC<{ product: Product }> = ({ product }) => {
         )}
 
         {/* Box-specific info */}
-        {!isCookie && box && (
-          <div>
-            <h3 className="text-brown-400 mb-3 text-xs font-bold tracking-widest uppercase">
-              {t("product.ingredients")}
+        {!isCookie && box && box.includedCookies?.length > 0 && (
+          <div className="bg-pink-50/50 rounded-2xl p-5">
+            <h3 className="text-brown-400 mb-4 text-xs font-bold tracking-widest uppercase">
+              {t("product.boxContents")}
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-3">
               {box.includedCookies.map((item, index) => (
-                <li key={index} className="text-brown-700 flex items-center gap-2">
-                  <CheckIcon className="h-4 w-4 text-pink-500" />
-                  {item.quantity}x Cookie #{item.cookiePieceId.slice(0, 6)}
+                <li key={index} className="text-brown-700 flex items-center gap-3">
+                  <div className="bg-pink-100 rounded-full p-1">
+                    <CheckIcon className="h-4 w-4 text-pink-500" />
+                  </div>
+                  <span className="font-medium">{item.quantity}x</span>
+                  <span className="text-brown-800">{item.productName || "Cookie"}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-sm text-pink-500">
-              {t("build.subtitle")}
-            </p>
           </div>
         )}
 

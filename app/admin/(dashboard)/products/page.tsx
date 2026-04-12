@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   PlusIcon,
   PencilIcon,
@@ -12,18 +12,18 @@ import {
   XIcon,
   SearchIcon,
   PackageIcon,
-  UploadIcon,
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
-import { Select } from "@/presentation/components/ui/Select";
-import type { Product, CookiePiece } from "@/domain/entities/product";
+import type { Product } from "@/domain/entities/product";
 import { isCookiePiece } from "@/domain/entities/product";
+import { ProductForm, type ProductFormData } from "@/presentation/components/features/ProductForm";
+import { BoxBuilder, type BoxItem } from "@/presentation/components/features/BoxBuilder";
 import { useTranslations, useLocale } from 'next-intl';
 
 type SortField = "name" | "price" | "type" | "status";
 type SortDirection = "asc" | "desc";
 
-// Product Form Modal Component
+// Product Modal Component
 function ProductModal({
   isOpen,
   onClose,
@@ -34,110 +34,69 @@ function ProductModal({
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onSave: (formData: ProductFormData) => void;
+  onSave: (formData: ProductFormData & { includedCookies?: BoxItem[] }) => void;
   isSubmitting: boolean;
 }) {
   const t = useTranslations();
-  const [formData, setFormData] = useState<ProductFormData>({
-    name: "",
-    slug: "",
-    description: "",
-    price: 150,
-    type: "cookie",
-    isActive: true,
-    images: [],
-    flavour: "",
-    allergens: [],
-    pieces: [],
-    isNew: true,
-    isSoldOut: false,
-  });
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [boxItems, setBoxItems] = useState<BoxItem[]>([]);
+  const [productType, setProductType] = useState<"cookie" | "box">("cookie");
 
+  // Reset state when modal opens/closes or product changes
   useEffect(() => {
-    if (product) {
-      const cookieData = isCookiePiece(product)
-        ? {
-            flavour: product.flavour || "",
-            allergens: product.allergens || [],
-            isNew: product.isNew ?? true,
-            isSoldOut: product.isSoldOut ?? false,
-          }
-        : {
-            flavour: "",
-            allergens: [],
-            isNew: true,
-            isSoldOut: false,
-          };
-
-      setFormData({
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        price: product.price,
-        type: product.type,
-        isActive: product.isActive,
-        images: product.images,
-        pieces: [],
-        ...cookieData,
-      });
-    } else {
-      setFormData({
-        name: "",
-        slug: "",
-        description: "",
-        price: 150,
-        type: "cookie",
-        isActive: true,
-        images: [],
-        flavour: "",
-        allergens: [],
-        pieces: [],
-        isNew: true,
-        isSoldOut: false,
-      });
-    }
-  }, [product, isOpen]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB");
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      const uploadFormData = new FormData();
-      uploadFormData.append("file", file);
-
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: uploadFormData,
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setFormData((prev) => ({ ...prev, images: [result.url] }));
+    if (isOpen) {
+      if (product) {
+        // Edit mode: set type from product and load existing cookies if it's a box
+        setProductType(product.type);
+        if (product.type === "box") {
+          const boxProduct = product as import("@/domain/entities/product").CookieBox;
+          setBoxItems(boxProduct.includedCookies || []);
+        } else {
+          setBoxItems([]);
+        }
       } else {
-        alert(result.error || "Failed to upload image");
+        // Add mode: reset to defaults (empty box, no default cookies)
+        setProductType("cookie");
+        setBoxItems([]);
       }
-    } catch (error) {
-      console.error("Failed to upload image:", error);
-      alert("Failed to upload image. Please try again.");
-    } finally {
-      setIsUploading(false);
     }
+  }, [isOpen, product]);
+
+  // Convert product to initial form data
+  const getInitialData = (): Partial<ProductFormData> | undefined => {
+    if (!product) return undefined;
+    
+    const cookieData = isCookiePiece(product)
+      ? {
+          flavour: product.flavour || "",
+          allergens: product.allergens || [],
+          isNew: product.isNew ?? true,
+          isSoldOut: product.isSoldOut ?? false,
+        }
+      : {
+          flavour: "",
+          allergens: [],
+          isNew: true,
+          isSoldOut: false,
+        };
+
+    return {
+      name: product.name,
+      slug: product.slug,
+      description: product.description,
+      price: product.price,
+      type: product.type,
+      isActive: product.isActive,
+      images: product.images,
+      ...cookieData,
+    };
+  };
+
+  const handleSubmit = async (formData: ProductFormData) => {
+    const dataToSave = {
+      ...formData,
+      ...(formData.type === "box" ? { includedCookies: boxItems } : {}),
+    };
+    onSave(dataToSave);
   };
 
   if (!isOpen) return null;
@@ -154,233 +113,42 @@ function ProductModal({
           </button>
         </div>
 
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave(formData);
-          }}
-          className="space-y-4 p-4 sm:p-6"
-        >
-          {/* Image Upload */}
-          <div>
-            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-              {t("admin.products.form.productImage")}
-            </label>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageUpload}
-              accept="image/*"
-              className="hidden"
-            />
+        <div className="p-4 sm:p-6">
+          <ProductForm
+            initialData={getInitialData()}
+            onSubmit={handleSubmit}
+            onCancel={onClose}
+            isSubmitting={isSubmitting}
+            mode="product"
+            t={t}
+            onTypeChange={(type) => {
+              setProductType(type);
+              // Clear box items when switching to cookie type
+              if (type === "cookie") {
+                setBoxItems([]);
+              }
+            }}
+          />
 
-            <div className="flex gap-3">
-              {/* Image preview tile */}
-              {formData.images[0] && (
-                <div className="group relative h-32 w-32 flex-shrink-0 overflow-hidden rounded-2xl border-2 border-[#F4538A]">
-                  <img
-                    src={formData.images[0]}
-                    alt="Preview"
-                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                  />
-                  <div className="absolute inset-0 rounded-2xl bg-black/0 transition-colors duration-200 group-hover:bg-black/25" />
-                  <span className="absolute bottom-1.5 left-1.5 rounded-full bg-[#F4538A] px-1.5 py-0.5 text-[10px] font-semibold text-white shadow">
-                    Main
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, images: [] }))}
-                    className="absolute top-1.5 right-1.5 rounded-full bg-white/90 p-1 text-red-500 opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100"
-                  >
-                    <XIcon className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              )}
-
-              {/* Upload / Replace tile */}
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-                className="flex h-32 flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#E8D5C0] transition-colors hover:border-[#F4538A] hover:bg-[#FFF0F5] disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#F4538A] border-t-transparent" />
-                ) : (
-                  <>
-                    <UploadIcon className="h-8 w-8 text-[#A07850]" />
-                    <span className="text-sm text-[#A07850]">
-                      {formData.images[0] ? "Replace image" : t("admin.products.form.uploadImage")}
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-              {t("admin.products.form.nameLabel")} *
-            </label>
-            <input
-              type="text"
-              name="name"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                Slug *
-              </label>
-              <input
-                type="text"
-                name="slug"
-                required
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                placeholder="product-slug"
-                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
+          {/* Box Builder for box type */}
+          {productType === "box" && (
+            <div className="mt-6 border-t border-[#E8D5C0] pt-6">
+              <h3 className="mb-4 text-sm font-bold uppercase tracking-widest text-[#A07850]">
+                {t("admin.products.form.boxContents")}
+              </h3>
+              <BoxBuilder
+                selectedItems={boxItems}
+                onItemsChange={setBoxItems}
+                t={t}
+                mode="admin"
               />
             </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                {t("admin.products.form.priceLabel")} *
-              </label>
-              <input
-                type="number"
-                name="price"
-                required
-                min={0}
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-              {t("admin.products.form.description")} *
-            </label>
-            <textarea
-              name="description"
-              required
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={3}
-              className="w-full resize-none rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
- />
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                {t("admin.products.form.flavour")}
-              </label>
-              <input
-                type="text"
-                value={formData.flavour}
-                onChange={(e) => setFormData({ ...formData, flavour: e.target.value })}
-                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                {t("admin.products.form.allergens")}
-              </label>
-              <input
-                type="text"
-                defaultValue={formData.allergens?.join(", ") || ""}
-                onBlur={(e) => setFormData({ ...formData, allergens: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
-                placeholder={t("admin.products.form.allergensPlaceholder")}
-                className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-xs font-bold tracking-widest text-[#A07850] uppercase">
-                {t("admin.products.form.typeLabel")} *
-              </label>
-              <Select
-                value={formData.type}
-                onChange={(value) => setFormData({ ...formData, type: value as "cookie" | "box" })}
-                options={[
-                  { value: "cookie", label: t("admin.products.form.cookie") },
-                  { value: "box", label: t("admin.products.form.box") },
-                ]}
-                placeholder={t("admin.products.form.typeLabel")}
-                size="md"
-                variant="default"
-                className="w-full"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-[#E8D5C0] p-3 transition-colors hover:border-[#F4538A]/50">
-              <input
-                type="checkbox"
-                checked={formData.isActive}
-                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                className="h-4 w-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
-                data-testid="product-toggle"
-              />
-              <span className="text-sm text-[#2C1810]">{t("admin.products.form.activeLabel")}</span>
-            </label>
-
-            <label className="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-[#E8D5C0] p-3 transition-colors hover:border-[#F4538A]/50">
-              <input
-                type="checkbox"
-                checked={formData.isNew}
-                onChange={(e) => setFormData({ ...formData, isNew: e.target.checked })}
-                className="h-4 w-4 rounded border-2 border-[#E8D5C0] text-[#F4538A] focus:ring-[#F4538A]"
-              />
-              <span className="text-sm text-[#2C1810]">{t("admin.products.form.markAsNew")}</span>
-            </label>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={onClose} className="flex-1">
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              isLoading={isSubmitting || isUploading}
-              className="flex-1 bg-[#F4538A] hover:bg-[#D63A72]"
-              data-testid="save-product-button"
-            >
-              {product ? t("admin.products.form.save") : t("admin.products.form.create")}
-            </Button>
-          </div>
-        </form>
+          )}
+        </div>
       </div>
     </div>
   );
 }
-
-type ProductFormData = {
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
-  type: "cookie" | "box";
-  isActive: boolean;
-  images: string[];
-  flavour?: string;
-  allergens?: string[];
-  pieces?: any[];
-  isNew?: boolean;
-  isSoldOut?: boolean;
-};
 
 // Product Card Component for Mobile
 function ProductCard({
@@ -536,16 +304,15 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const handleSave = async (formData: ProductFormData) => {
+  const handleSave = async (formData: ProductFormData & { includedCookies?: BoxItem[] }) => {
     setIsSubmitting(true);
     try {
       const url = editingProduct ? `/api/products/${editingProduct.id}` : "/api/products";
       const method = editingProduct ? "PUT" : "POST";
 
-      // Auto-generate slug if empty
       const dataToSend = {
         ...formData,
-        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-"),
+        slug: formData.slug || formData.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
       };
 
       const response = await fetch(url, {

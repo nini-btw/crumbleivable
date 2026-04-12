@@ -27,8 +27,8 @@ describe("Votes API", () => {
   describe("GET /api/votes", () => {
     it("should return 200 with active candidates", async () => {
       const mockCandidates = [
-        createVoteCandidate({ id: "candidate-1", name: "Candidate 1", voteCount: 5 }),
-        createVoteCandidate({ id: "candidate-2", name: "Candidate 2", voteCount: 3 }),
+        createVoteCandidate({ id: "candidate-1", cookieName: "Candidate 1", voteCount: 5 }),
+        createVoteCandidate({ id: "candidate-2", cookieName: "Candidate 2", voteCount: 3 }),
       ];
       vi.mocked(voteRepository.getAllActive).mockResolvedValue(mockCandidates);
 

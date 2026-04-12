@@ -22,6 +22,7 @@ import type { WeeklyDrop } from "@/domain/entities/drop";
  */
 export function createMockProductRepository(): IProductRepository {
   return {
+    getAll: vi.fn<() => Promise<Product[]>>(() => Promise.resolve([])),
     getAllActive: vi.fn<() => Promise<Product[]>>(() => Promise.resolve([])),
     getAllActivePaginated: vi.fn<(limit: number, offset: number) => Promise<Product[]>>(() => 
       Promise.resolve([])

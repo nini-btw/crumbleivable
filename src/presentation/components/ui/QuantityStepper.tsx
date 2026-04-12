@@ -9,6 +9,7 @@ export interface QuantityStepperProps {
   min?: number;
   max?: number;
   disabled?: boolean;
+  size?: "sm" | "md";
 }
 
 export const QuantityStepper: React.FC<QuantityStepperProps> = ({
@@ -17,7 +18,9 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
   min = 1,
   max = 99,
   disabled = false,
+  size = "md",
 }) => {
+  const isSmall = size === "sm";
   const decrement = () => {
     if (value > min) {
       onChange(value - 1);
@@ -40,13 +43,16 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
       <button
         onClick={decrement}
         disabled={disabled || value <= min}
-        className="w-10 h-10 flex items-center justify-center text-[#5C3D2E] hover:bg-[#FFF0F5] transition-colors disabled:cursor-not-allowed cursor-pointer"
+        className={cn(
+          "flex items-center justify-center text-[#5C3D2E] hover:bg-[#FFF0F5] transition-colors disabled:cursor-not-allowed cursor-pointer",
+          isSmall ? "w-6 h-6" : "w-10 h-10"
+        )}
         aria-label="Decrease quantity"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
+          width={isSmall ? 12 : 16}
+          height={isSmall ? 12 : 16}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -57,17 +63,23 @@ export const QuantityStepper: React.FC<QuantityStepperProps> = ({
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
       </button>
-      <span className="w-10 text-center font-bold text-[#2C1810]">{value}</span>
+      <span className={cn(
+        "text-center font-bold text-[#2C1810]",
+        isSmall ? "w-6 text-xs" : "w-10"
+      )}>{value}</span>
       <button
         onClick={increment}
         disabled={disabled || value >= max}
-        className="w-10 h-10 flex items-center justify-center text-[#F4538A] hover:bg-[#FFF0F5] transition-colors disabled:cursor-not-allowed cursor-pointer"
+        className={cn(
+          "flex items-center justify-center text-[#F4538A] hover:bg-[#FFF0F5] transition-colors disabled:cursor-not-allowed cursor-pointer",
+          isSmall ? "w-6 h-6" : "w-10 h-10"
+        )}
         aria-label="Increase quantity"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="16"
-          height="16"
+          width={isSmall ? 12 : 16}
+          height={isSmall ? 12 : 16}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

@@ -1,6 +1,6 @@
 /**
  * Products API Routes
- * @route GET /api/products - Get all active products
+ * @route GET /api/products - Get all active products (public)
  * @route POST /api/products - Create a new product (admin only)
  */
 
@@ -10,7 +10,7 @@ import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 
 /**
  * GET /api/products
- * Get all active products with pagination
+ * Get all active products with pagination (public endpoint)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     
     const offset = (validatedPage - 1) * validatedLimit;
     
+    // Public endpoint: return only active products
     const products = await productRepository.getAllActivePaginated(validatedLimit, offset);
     
     // Get total count for pagination metadata
