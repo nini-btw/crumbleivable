@@ -260,6 +260,7 @@
       "allStatuses": "Tous les Statuts",
       "selectWilaya": "Sélectionner une wilaya",
       "selectStatus": "Sélectionner un statut",
+      "selectDate": "Sélectionner une date",
       "startDate": "Date de Début",
       "endDate": "Date de Fin",
       "clearFilters": "Effacer les Filtres",
@@ -313,6 +314,13 @@
       "edit": "Modifier",
       "delete": "Supprimer",
       "noProducts": "Pas encore de produits. Ajoutez-en !",
+      "stats": {
+        "total": "Total",
+        "active": "Actifs",
+        "inactive": "Inactifs",
+        "cookies": "Cookies",
+        "boxes": "Boîtes"
+      },
       "form": {
         "addTitle": "Ajouter un Produit",
         "editTitle": "Modifier le Produit",
@@ -354,6 +362,8 @@
       "chooseCookie": "Choisissez un cookie...",
       "date": "Date",
       "time": "Heure",
+      "selectDate": "Sélectionner une date",
+      "selectTime": "Sélectionner une heure",
       "schedule": "Planifier le Drop",
       "preview": "Aperçu",
       "countdownPreview": "Aperçu du Compte à Rebours",

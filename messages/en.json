@@ -260,6 +260,7 @@
       "allStatuses": "All Statuses",
       "selectWilaya": "Select wilaya",
       "selectStatus": "Select status",
+      "selectDate": "Select date",
       "startDate": "Start Date",
       "endDate": "End Date",
       "clearFilters": "Clear Filters",
@@ -313,6 +314,13 @@
       "edit": "Edit",
       "delete": "Delete",
       "noProducts": "No products yet. Add some!",
+      "stats": {
+        "total": "Total",
+        "active": "Active",
+        "inactive": "Inactive",
+        "cookies": "Cookies",
+        "boxes": "Boxes"
+      },
       "form": {
         "addTitle": "Add Product",
         "editTitle": "Edit Product",
@@ -354,6 +362,8 @@
       "chooseCookie": "Choose a cookie...",
       "date": "Date",
       "time": "Time",
+      "selectDate": "Select date",
+      "selectTime": "Select time",
       "schedule": "Schedule Drop",
       "preview": "Preview",
       "countdownPreview": "Countdown Preview",

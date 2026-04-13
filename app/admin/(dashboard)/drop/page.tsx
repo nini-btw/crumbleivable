@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import { CalendarIcon, ClockIcon, Trash2Icon, SparklesIcon, PackageIcon, AlertCircleIcon } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
+import { DatePicker } from "@/presentation/components/ui/DatePicker";
+import { TimePicker } from "@/presentation/components/ui/TimePicker";
 import type { CookiePiece, Product } from "@/domain/entities/product";
 import type { WeeklyDrop } from "@/domain/entities/drop";
 import { useTranslations, useLocale } from 'next-intl';
@@ -328,50 +330,18 @@ export default function AdminDropPage() {
             />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="text-[#A07850] mb-2 block text-xs font-bold tracking-widest uppercase">
-                  {t('admin.drop.date')}
-                </label>
-                <div className="relative">
-                  <input
-                    id="dateInput"
-                    type="date"
-                    value={scheduledDate}
-                    onChange={(e) => setScheduledDate(e.target.value)}
-                    className="w-full cursor-pointer appearance-none rounded-2xl border-2 border-[#E8D5C0] bg-white py-3.5 pr-12 pl-4 text-[#2C1810] scheme-light focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm sm:text-base [&::-webkit-calendar-picker-indicator]:hidden"
-                  />
-
-                  <CalendarIcon
-                    onClick={() =>
-                      (document.getElementById("dateInput") as HTMLInputElement)?.showPicker()
-                    }
-                    className="absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer text-[#A07850]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[#A07850] mb-2 block text-xs font-bold tracking-widest uppercase">
-                  {t('admin.drop.time')}
-                </label>
-
-                <div className="relative">
-                  <input
-                    id="timeInput"
-                    type="time"
-                    value={scheduledTime}
-                    onChange={(e) => setScheduledTime(e.target.value)}
-                    className="w-full cursor-pointer appearance-none rounded-2xl border-2 border-[#E8D5C0] bg-white py-3.5 pr-12 pl-4 text-[#2C1810] scheme-light focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm sm:text-base [&::-webkit-calendar-picker-indicator]:hidden"
-                  />
-
-                  <ClockIcon
-                    onClick={() =>
-                      (document.getElementById("timeInput") as HTMLInputElement)?.showPicker()
-                    }
-                    className="absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer text-[#A07850]"
-                  />
-                </div>
-              </div>
+              <DatePicker
+                value={scheduledDate}
+                onChange={setScheduledDate}
+                label={t('admin.drop.date')}
+                placeholder={t('admin.drop.selectDate')}
+              />
+              <TimePicker
+                value={scheduledTime}
+                onChange={setScheduledTime}
+                label={t('admin.drop.time')}
+                placeholder={t('admin.drop.selectTime')}
+              />
             </div>
           </div>
 

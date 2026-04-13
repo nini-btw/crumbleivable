@@ -12,6 +12,11 @@ import {
   XIcon,
   SearchIcon,
   PackageIcon,
+  LayersIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  CookieIcon,
+  SparklesIcon,
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import type { Product } from "@/domain/entities/product";
@@ -378,6 +383,43 @@ export default function AdminProductsPage() {
     </th>
   );
 
+  // Calculate stats
+  const stats = React.useMemo(() => {
+    const total = products.length;
+    const active = products.filter((p) => p.isActive).length;
+    const inactive = total - active;
+    const cookies = products.filter((p) => p.type === "cookie").length;
+    const boxes = products.filter((p) => p.type === "box").length;
+    const newProducts = products.filter((p) => isCookiePiece(p) && p.isNew).length;
+
+    return { total, active, inactive, cookies, boxes, newProducts };
+  }, [products]);
+
+  // Stats Card Component
+  const StatCard = ({
+    title,
+    value,
+    icon: Icon,
+    color,
+  }: {
+    title: string;
+    value: number;
+    icon: React.ElementType;
+    color: string;
+  }) => (
+    <div className="rounded-2xl border border-[#E8D5C0] bg-white p-4 sm:p-5">
+      <div className="flex items-center gap-3">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
+          <Icon className="h-5 w-5 text-white" />
+        </div>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#A07850]">{title}</p>
+          <p className="text-2xl font-bold text-[#2C1810]">{value}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div className="space-y-8">
@@ -403,6 +445,40 @@ export default function AdminProductsPage() {
           <PlusIcon className="mr-2 h-4 w-4" />
           {t("admin.products.addProduct")}
         </Button>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 sm:gap-4">
+        <StatCard
+          title={t("admin.products.stats.total")}
+          value={stats.total}
+          icon={LayersIcon}
+          color="bg-[#F4538A]"
+        />
+        <StatCard
+          title={t("admin.products.stats.active")}
+          value={stats.active}
+          icon={CheckCircleIcon}
+          color="bg-green-500"
+        />
+        <StatCard
+          title={t("admin.products.stats.inactive")}
+          value={stats.inactive}
+          icon={XCircleIcon}
+          color="bg-gray-400"
+        />
+        <StatCard
+          title={t("admin.products.stats.cookies")}
+          value={stats.cookies}
+          icon={CookieIcon}
+          color="bg-amber-500"
+        />
+        <StatCard
+          title={t("admin.products.stats.boxes")}
+          value={stats.boxes}
+          icon={PackageIcon}
+          color="bg-blue-500"
+        />
       </div>
 
       {/* Search Bar */}

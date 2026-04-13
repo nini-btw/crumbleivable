@@ -199,6 +199,7 @@ export function ProductForm({
           min={0}
           value={formData.price}
           onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+          onWheel={(e) => e.currentTarget.blur()}
           className="w-full rounded-2xl border-2 border-[#E8D5C0] bg-white px-4 py-3 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none"
         />
       </div>

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/presentation/components/ui/Button";
 import { Select } from "@/presentation/components/ui/Select";
+import { DatePicker } from "@/presentation/components/ui/DatePicker";
 import type { Order, WilayaOrderStats } from "@/domain/entities/order";
 import type { DeliveryZone } from "@/domain/entities/delivery";
 import { useTranslations, useLocale } from 'next-intl';
@@ -768,28 +769,18 @@ export default function AdminOrdersPage() {
               label={t('admin.orders.status')}
               placeholder={t('admin.orders.selectStatus')}
             />
-            <div>
-              <label className="block text-sm font-medium text-[#5C3D2E] mb-1.5">
-                {t('admin.orders.startDate')}
-              </label>
-              <input
-                type="date"
-                value={filterStartDate}
-                onChange={(e) => setFilterStartDate(e.target.value)}
-                className="w-full rounded-full border-2 border-[#E8D5C0] bg-white px-4 py-2 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#5C3D2E] mb-1.5">
-                {t('admin.orders.endDate')}
-              </label>
-              <input
-                type="date"
-                value={filterEndDate}
-                onChange={(e) => setFilterEndDate(e.target.value)}
-                className="w-full rounded-full border-2 border-[#E8D5C0] bg-white px-4 py-2 text-[#2C1810] focus:border-[#F4538A] focus:ring-2 focus:ring-[#F4538A]/20 focus:outline-none text-sm"
-              />
-            </div>
+            <DatePicker
+              value={filterStartDate}
+              onChange={setFilterStartDate}
+              label={t('admin.orders.startDate')}
+              placeholder={t('admin.orders.selectDate')}
+            />
+            <DatePicker
+              value={filterEndDate}
+              onChange={setFilterEndDate}
+              label={t('admin.orders.endDate')}
+              placeholder={t('admin.orders.selectDate')}
+            />
           </div>
           {hasActiveFilters && (
             <div className="flex justify-end">
