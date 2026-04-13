@@ -30,7 +30,7 @@ export interface Order {
   status: OrderStatus;
   totalAmount: number;
   // Delivery details
-  deliveryZoneId?: string;
+  deliveryZoneId: string;
   deliveryType?: "stop_desk" | "home";
   deliveryFee?: number;
   wilayaCode?: string;
@@ -91,9 +91,9 @@ export interface CreateOrderPayload {
   deliveryZoneId: string;
   deliveryType: "stop_desk" | "home";
   deliveryFee: number;
-  wilayaCode: string;
-  wilayaName: string;
-  communeName: string;
+  wilayaCode?: string;
+  wilayaName?: string;
+  communeName?: string;
 }
 
 /**

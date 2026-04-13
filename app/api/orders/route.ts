@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { orderRepository } from "@/infrastructure/db/order.adapter";
+import { deliveryRepository } from "@/infrastructure/db/delivery.adapter";
 import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 import { canCheckout } from "@/domain/rules/cart.rules";
 import type { CreateOrderPayload, OrderFilters } from "@/domain/entities/order";
@@ -90,16 +91,22 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-    
-    // Validate wilaya/commune fields
-    if (!body.wilayaCode || !body.wilayaName || !body.communeName) {
+
+    // Resolve delivery zone and derive wilaya/commune fields
+    const zone = await deliveryRepository.getZone(body.deliveryZoneId);
+    if (!zone) {
       return NextResponse.json(
-        { success: false, error: "Missing wilaya/commune information" },
+        { success: false, error: "Invalid delivery zone" },
         { status: 400 }
       );
     }
 
-    const order = await orderRepository.create(body);
+    const order = await orderRepository.create({
+      ...body,
+      wilayaCode: zone.wilayaCode,
+      wilayaName: zone.wilayaNameAscii,
+      communeName: zone.communeNameAscii,
+    });
     
     return NextResponse.json(
       { success: true, data: order, message: "Order created successfully" },

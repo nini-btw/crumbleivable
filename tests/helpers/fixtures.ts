@@ -58,9 +58,6 @@ export const validOrderPayload: CreateOrderPayload = {
   deliveryZoneId: "test-zone-1",
   deliveryType: "stop_desk",
   deliveryFee: 400,
-  wilayaCode: "16",
-  wilayaName: "Alger",
-  communeName: "Alger Centre",
 };
 
 /**

@@ -18,10 +18,18 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore non-serializable values in these paths
-        ignoredPaths: ["cart.items.product.createdAt", "cart.items.product.updatedAt"],
+        // Cart stores full Product entities with Date fields; ignore the whole slice
+        ignoredPaths: ["cart"],
+        ignoredActions: ["cart/hydrateCart", "cart/addItem"],
       },
     }),
+  devTools: {
+    serialize: {
+      options: {
+        date: true,
+      },
+    },
+  },
 });
 
 /**

@@ -18,6 +18,11 @@ const isMockMode = !db;
  */
 export class OrderRepository implements IOrderRepository {
   async create(payload: CreateOrderPayload): Promise<Order> {
+    if (!payload.wilayaCode || !payload.wilayaName || !payload.communeName) {
+      throw new Error(
+        "wilaya fields must be resolved server-side before calling orderRepository.create()"
+      );
+    }
     const totalAmount = calculateCartTotal(payload.items);
 
     if (isMockMode) {
@@ -263,7 +268,7 @@ export class OrderRepository implements IOrderRepository {
       giftNote: order.giftNote || undefined,
       status: order.status,
       totalAmount: order.totalAmount,
-      deliveryZoneId: order.deliveryZoneId || undefined,
+      deliveryZoneId: order.deliveryZoneId,
       deliveryType: order.deliveryType || undefined,
       deliveryFee: order.deliveryFee || undefined,
       wilayaCode: order.wilayaCode || undefined,

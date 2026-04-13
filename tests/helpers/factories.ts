@@ -145,6 +145,7 @@ export function createOrder(overrides?: Partial<Order>): Order {
     items: [createOrderItem({ orderId: id })],
     status: "pending" as OrderStatus,
     totalAmount: 450,
+    deliveryZoneId: generateId("zone"),
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -164,9 +165,6 @@ export function createOrderPayload(overrides?: Partial<CreateOrderPayload>): Cre
     deliveryZoneId: generateId("zone"),
     deliveryType: "stop_desk",
     deliveryFee: 400,
-    wilayaCode: "16",
-    wilayaName: "Alger",
-    communeName: "Alger Centre",
     ...overrides,
   };
 }

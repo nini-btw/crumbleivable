@@ -148,9 +148,6 @@ export default function CartPage() {
           deliveryZoneId: data.deliveryZoneId,
           deliveryType: data.deliveryType,
           deliveryFee: data.deliveryFee,
-          wilayaCode: deliverySelection?.wilayaCode,
-          wilayaName: deliverySelection?.wilayaName,
-          communeName: deliverySelection?.communeName,
         }),
       });
 

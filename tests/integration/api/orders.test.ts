@@ -13,6 +13,12 @@ vi.mock("@/infrastructure/db/order.adapter", () => ({
   },
 }));
 
+vi.mock("@/infrastructure/db/delivery.adapter", () => ({
+  deliveryRepository: {
+    getZone: vi.fn(),
+  },
+}));
+
 vi.mock("@/infrastructure/auth/supabase-auth", () => ({
   getAdminSession: vi.fn(),
 }));
@@ -20,8 +26,28 @@ vi.mock("@/infrastructure/auth/supabase-auth", () => ({
 // Now import the modules
 import { GET, POST } from "@/app/api/orders/route";
 import { orderRepository } from "@/infrastructure/db/order.adapter";
+import { deliveryRepository } from "@/infrastructure/db/delivery.adapter";
 import { getAdminSession } from "@/infrastructure/auth/supabase-auth";
 import { createOrder, createCookiePiece } from "@/tests/helpers/factories";
+
+const mockZone = {
+  id: "zone-1",
+  wilayaCode: "16",
+  wilayaName: "Alger",
+  communeName: "Alger Centre",
+  wilayaNameAscii: "Alger",
+  communeNameAscii: "Alger Centre",
+  stopDeskFee: 400,
+  homeFee: 700,
+  hasStopDesk: true,
+  hasHomeDelivery: true,
+};
+
+const validDelivery = {
+  deliveryZoneId: "zone-1",
+  deliveryType: "stop_desk",
+  deliveryFee: 400,
+};
 
 describe("Orders API", () => {
   beforeEach(() => {
@@ -102,9 +128,8 @@ describe("Orders API", () => {
       expect(data.error).toContain("customer");
     });
 
-    it("should return 201 with valid order data", async () => {
-      const mockOrder = createOrder({ id: "order-1" });
-      vi.mocked(orderRepository.create).mockResolvedValue(mockOrder);
+    it("should return 400 for invalid delivery zone", async () => {
+      vi.mocked(deliveryRepository.getZone).mockResolvedValue(null);
 
       const request = new Request("http://localhost:3000/api/orders", {
         method: "POST",
@@ -112,6 +137,30 @@ describe("Orders API", () => {
         body: JSON.stringify({
           customer: { fullName: "Test Customer", phone: "123456", address: "123 Street" },
           items: [{ product: createCookiePiece({ price: 150 }), quantity: 3 }],
+          ...validDelivery,
+        }),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe("Invalid delivery zone");
+    });
+
+    it("should return 201 with valid order data", async () => {
+      const mockOrder = createOrder({ id: "order-1" });
+      vi.mocked(orderRepository.create).mockResolvedValue(mockOrder);
+      vi.mocked(deliveryRepository.getZone).mockResolvedValue(mockZone as any);
+
+      const request = new Request("http://localhost:3000/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customer: { fullName: "Test Customer", phone: "123456", address: "123 Street" },
+          items: [{ product: createCookiePiece({ price: 150 }), quantity: 3 }],
+          ...validDelivery,
         }),
       });
 
@@ -123,6 +172,14 @@ describe("Orders API", () => {
       expect(data.data.id).toBe(mockOrder.id);
       expect(data.data.totalAmount).toBe(mockOrder.totalAmount);
       expect(data.data.status).toBe(mockOrder.status);
+      expect(orderRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          ...validDelivery,
+          wilayaCode: mockZone.wilayaCode,
+          wilayaName: mockZone.wilayaNameAscii,
+          communeName: mockZone.communeNameAscii,
+        })
+      );
     });
   });
 });

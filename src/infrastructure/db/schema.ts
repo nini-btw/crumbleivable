@@ -75,7 +75,7 @@ export const orders = pgTable("orders", {
   status: orderStatusEnum("status").default("pending").notNull(),
   totalAmount: integer("total_amount").notNull(),
   // Delivery fields
-  deliveryZoneId: uuid("delivery_zone_id").references(() => deliveryZones.id),
+  deliveryZoneId: uuid("delivery_zone_id").references(() => deliveryZones.id).notNull(),
   deliveryType: deliveryTypeEnum("delivery_type"),
   deliveryFee: integer("delivery_fee"),
   // Wilaya/Commune details (denormalized for reporting)
