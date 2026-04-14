@@ -10,6 +10,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock the modules before importing the route
 vi.mock("@/infrastructure/auth/supabase-auth", () => ({
@@ -30,7 +31,7 @@ describe.skip("Upload API", () => {
       vi.mocked(getAdminSession).mockResolvedValue({ id: "admin-1", email: "admin@test.com", role: "admin" });
 
       const formData = new FormData();
-      const request = new Request("http://localhost:3000/api/upload", {
+      const request = new NextRequest("http://localhost:3000/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -50,7 +51,7 @@ describe.skip("Upload API", () => {
       const textFile = new File(["test content"], "test.txt", { type: "text/plain" });
       formData.append("file", textFile);
 
-      const request = new Request("http://localhost:3000/api/upload", {
+      const request = new NextRequest("http://localhost:3000/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -72,7 +73,7 @@ describe.skip("Upload API", () => {
       const largeFile = new File([largeContent], "large.png", { type: "image/png" });
       formData.append("file", largeFile);
 
-      const request = new Request("http://localhost:3000/api/upload", {
+      const request = new NextRequest("http://localhost:3000/api/upload", {
         method: "POST",
         body: formData,
       });
@@ -92,7 +93,7 @@ describe.skip("Upload API", () => {
       const imageFile = new File(["image content"], "test.png", { type: "image/png" });
       formData.append("file", imageFile);
 
-      const request = new Request("http://localhost:3000/api/upload", {
+      const request = new NextRequest("http://localhost:3000/api/upload", {
         method: "POST",
         body: formData,
       });

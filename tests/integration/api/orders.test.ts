@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock the modules before importing the route
 vi.mock("@/infrastructure/db/order.adapter", () => ({
@@ -58,7 +59,7 @@ describe("Orders API", () => {
     it("should return 401 without admin auth", async () => {
       vi.mocked(getAdminSession).mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/api/orders");
+      const request = new NextRequest("http://localhost:3000/api/orders");
       const response = await GET(request);
       const data = await response.json();
 
@@ -72,7 +73,7 @@ describe("Orders API", () => {
       const mockOrders = [createOrder({ id: "order-1" })];
       vi.mocked(orderRepository.getAll).mockResolvedValue(mockOrders);
 
-      const request = new Request("http://localhost:3000/api/orders");
+      const request = new NextRequest("http://localhost:3000/api/orders");
       const response = await GET(request);
       const data = await response.json();
 
@@ -85,7 +86,7 @@ describe("Orders API", () => {
       vi.mocked(getAdminSession).mockResolvedValue({ id: "admin-1", email: "admin@test.com", role: "admin" });
       vi.mocked(orderRepository.getAll).mockResolvedValue([]);
 
-      const request = new Request("http://localhost:3000/api/orders?limit=50");
+      const request = new NextRequest("http://localhost:3000/api/orders?limit=50");
       await GET(request);
 
       expect(orderRepository.getAll).toHaveBeenCalledWith(50);
@@ -94,7 +95,7 @@ describe("Orders API", () => {
 
   describe("POST /api/orders", () => {
     it("should return 400 for empty cart (minimum not met)", async () => {
-      const request = new Request("http://localhost:3000/api/orders", {
+      const request = new NextRequest("http://localhost:3000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -112,7 +113,7 @@ describe("Orders API", () => {
     });
 
     it("should return 400 for missing customer info", async () => {
-      const request = new Request("http://localhost:3000/api/orders", {
+      const request = new NextRequest("http://localhost:3000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -131,7 +132,7 @@ describe("Orders API", () => {
     it("should return 400 for invalid delivery zone", async () => {
       vi.mocked(deliveryRepository.getZone).mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/api/orders", {
+      const request = new NextRequest("http://localhost:3000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +155,7 @@ describe("Orders API", () => {
       vi.mocked(orderRepository.create).mockResolvedValue(mockOrder);
       vi.mocked(deliveryRepository.getZone).mockResolvedValue(mockZone as any);
 
-      const request = new Request("http://localhost:3000/api/orders", {
+      const request = new NextRequest("http://localhost:3000/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

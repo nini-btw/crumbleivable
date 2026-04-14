@@ -50,6 +50,7 @@ export async function seedOrder(overrides?: Partial<CreateOrderPayload>) {
     address: "123 Test Street",
     status: "pending" as const,
     totalAmount: 450,
+    deliveryZoneId: "zone-mock-1",
     ...overrides?.customer,
   };
 

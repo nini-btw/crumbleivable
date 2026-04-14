@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock the modules before importing the route
 vi.mock("@/infrastructure/db/vote.adapter", () => ({
@@ -66,7 +67,7 @@ describe("Votes API", () => {
 
   describe("POST /api/votes", () => {
     it("should return 400 for missing candidateId", async () => {
-      const request = new Request("http://localhost:3000/api/votes", {
+      const request = new NextRequest("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
@@ -83,7 +84,7 @@ describe("Votes API", () => {
     it("should return 409 for duplicate vote", async () => {
       vi.mocked(voteRepository.hasVoted).mockResolvedValue(true);
 
-      const request = new Request("http://localhost:3000/api/votes", {
+      const request = new NextRequest("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidateId: "candidate-1" }),
@@ -101,7 +102,7 @@ describe("Votes API", () => {
       vi.mocked(voteRepository.hasVoted).mockResolvedValue(false);
       vi.mocked(voteRepository.vote).mockResolvedValue();
 
-      const request = new Request("http://localhost:3000/api/votes", {
+      const request = new NextRequest("http://localhost:3000/api/votes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ candidateId: "candidate-1" }),

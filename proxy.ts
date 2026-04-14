@@ -1,5 +1,5 @@
 /**
- * Next.js middleware
+ * Next.js proxy
  * Handles admin route protection
  * Note: i18n is handled client-side via next-intl
  */
@@ -21,7 +21,7 @@ function getLocaleFromRequest(request: NextRequest): string {
   if (localeCookie && validLocales.includes(localeCookie)) {
     return localeCookie;
   }
-  
+
   // Check Accept-Language header
   const acceptLanguage = request.headers.get('accept-language');
   if (acceptLanguage) {
@@ -33,21 +33,21 @@ function getLocaleFromRequest(request: NextRequest): string {
       return preferredLocale;
     }
   }
-  
+
   return defaultLocale;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
+
   // Create response
   const response = NextResponse.next();
-  
+
   // Detect and set locale
   const locale = getLocaleFromRequest(request);
   response.cookies.set('NEXT_LOCALE', locale, { path: '/' });
   response.headers.set('x-locale', locale);
-  
+
   // Skip auth check for non-admin routes
   if (!pathname.startsWith('/admin')) {
     return response;

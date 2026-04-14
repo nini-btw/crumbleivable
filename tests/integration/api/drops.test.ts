@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock the modules before importing the route
 vi.mock("@/infrastructure/db/drop.adapter", () => ({
@@ -33,7 +34,7 @@ describe("Drops API", () => {
       });
       vi.mocked(dropRepository.getCurrent).mockResolvedValue(mockDrop);
 
-      const request = new Request("http://localhost:3000/api/drops");
+      const request = new NextRequest("http://localhost:3000/api/drops");
       const response = await GET(request);
       const data = await response.json();
 
@@ -49,7 +50,7 @@ describe("Drops API", () => {
       });
       vi.mocked(dropRepository.getCurrent).mockResolvedValue(mockDrop);
 
-      const request = new Request("http://localhost:3000/api/drops");
+      const request = new NextRequest("http://localhost:3000/api/drops");
       const response = await GET(request);
       const data = await response.json();
 
@@ -61,7 +62,7 @@ describe("Drops API", () => {
     it("should return 500 when repository throws", async () => {
       vi.mocked(dropRepository.getCurrent).mockRejectedValue(new Error("DB error"));
 
-      const request = new Request("http://localhost:3000/api/drops");
+      const request = new NextRequest("http://localhost:3000/api/drops");
       const response = await GET(request);
       const data = await response.json();
 
@@ -74,7 +75,7 @@ describe("Drops API", () => {
   describe("POST /api/drops", () => {
     it("should return 401 without admin auth", async () => {
       // getAdminSession will return null since we didn't mock it to return a value
-      const request = new Request("http://localhost:3000/api/drops", {
+      const request = new NextRequest("http://localhost:3000/api/drops", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId: "prod-1", scheduledAt: "2025-01-20T10:00:00Z" }),

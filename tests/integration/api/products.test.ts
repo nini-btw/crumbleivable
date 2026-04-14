@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { NextRequest } from "next/server";
 
 // Mock the modules before importing the route
 vi.mock("@/infrastructure/db/product.adapter", () => ({
@@ -38,7 +39,7 @@ describe("Products API", () => {
       vi.mocked(productRepository.getAllActivePaginated).mockResolvedValue(mockProducts);
       vi.mocked(productRepository.getActiveCount).mockResolvedValue(2);
 
-      const request = new Request("http://localhost:3000/api/products?page=1&limit=20");
+      const request = new NextRequest("http://localhost:3000/api/products?page=1&limit=20");
       const response = await GET(request);
       const data = await response.json();
 
@@ -57,7 +58,7 @@ describe("Products API", () => {
       vi.mocked(productRepository.getAllActivePaginated).mockResolvedValue([]);
       vi.mocked(productRepository.getActiveCount).mockResolvedValue(0);
 
-      const request = new Request("http://localhost:3000/api/products?page=2&limit=10");
+      const request = new NextRequest("http://localhost:3000/api/products?page=2&limit=10");
       await GET(request);
 
       expect(productRepository.getAllActivePaginated).toHaveBeenCalledWith(10, 10);
@@ -66,7 +67,7 @@ describe("Products API", () => {
     it("should return 500 when repository throws", async () => {
       vi.mocked(productRepository.getAllActivePaginated).mockRejectedValue(new Error("DB error"));
 
-      const request = new Request("http://localhost:3000/api/products");
+      const request = new NextRequest("http://localhost:3000/api/products");
       const response = await GET(request);
       const data = await response.json();
 
@@ -80,7 +81,7 @@ describe("Products API", () => {
     it("should return 401 without admin auth", async () => {
       vi.mocked(getAdminSession).mockResolvedValue(null);
 
-      const request = new Request("http://localhost:3000/api/products", {
+      const request = new NextRequest("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Test" }),
@@ -97,7 +98,7 @@ describe("Products API", () => {
     it("should return 400 for missing required fields", async () => {
       vi.mocked(getAdminSession).mockResolvedValue({ id: "admin-1", email: "admin@test.com", role: "admin" });
 
-      const request = new Request("http://localhost:3000/api/products", {
+      const request = new NextRequest("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: "Test Product" }),
@@ -116,7 +117,7 @@ describe("Products API", () => {
       const mockProduct = createCookiePiece({ id: "new-prod", name: "New Product" });
       vi.mocked(productRepository.create).mockResolvedValue(mockProduct);
 
-      const request = new Request("http://localhost:3000/api/products", {
+      const request = new NextRequest("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -143,7 +144,7 @@ describe("Products API", () => {
       error.code = "23505";
       vi.mocked(productRepository.create).mockRejectedValue(error);
 
-      const request = new Request("http://localhost:3000/api/products", {
+      const request = new NextRequest("http://localhost:3000/api/products", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
