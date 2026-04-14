@@ -236,6 +236,8 @@ export default function AdminProductsPage() {
   const [sortField, setSortField] = useState<SortField>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | null>(null);
+  const [typeFilter, setTypeFilter] = useState<"cookies" | "boxes" | null>(null);
   const t = useTranslations();
   const locale = useLocale();
   const isRTL = locale === 'ar';
@@ -266,11 +268,37 @@ export default function AdminProductsPage() {
     }
   };
 
+  const toggleStatusFilter = (status: "active" | "inactive") => {
+    setStatusFilter((prev) => (prev === status ? null : status));
+  };
+
+  const toggleTypeFilter = (type: "cookies" | "boxes") => {
+    setTypeFilter((prev) => (prev === type ? null : type));
+  };
+
+  const clearFilters = () => {
+    setStatusFilter(null);
+    setTypeFilter(null);
+  };
+
   const filteredAndSortedProducts = React.useMemo(() => {
     let filtered = products;
+
+    if (statusFilter === "active") {
+      filtered = filtered.filter((p) => p.isActive);
+    } else if (statusFilter === "inactive") {
+      filtered = filtered.filter((p) => !p.isActive);
+    }
+
+    if (typeFilter === "cookies") {
+      filtered = filtered.filter((p) => p.type === "cookie");
+    } else if (typeFilter === "boxes") {
+      filtered = filtered.filter((p) => p.type === "box");
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = products.filter(
+      filtered = filtered.filter(
         (p) =>
           p.name.toLowerCase().includes(query) ||
           p.description.toLowerCase().includes(query) ||
@@ -297,7 +325,7 @@ export default function AdminProductsPage() {
       }
       return sortDirection === "asc" ? comparison : -comparison;
     });
-  }, [products, sortField, sortDirection, searchQuery]);
+  }, [products, sortField, sortDirection, searchQuery, statusFilter, typeFilter]);
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -401,13 +429,24 @@ export default function AdminProductsPage() {
     value,
     icon: Icon,
     color,
+    isActive,
+    onClick,
   }: {
     title: string;
     value: number;
     icon: React.ElementType;
     color: string;
+    isActive?: boolean;
+    onClick?: () => void;
   }) => (
-    <div className="rounded-2xl border border-[#E8D5C0] bg-white p-4 sm:p-5">
+    <button
+      onClick={onClick}
+      className={`w-full rounded-2xl border p-4 text-left transition-all sm:p-5 cursor-pointer ${
+        isActive
+          ? "border-[#F4538A] bg-[#FFF0F5] ring-2 ring-[#F4538A]/20"
+          : "border-[#E8D5C0] bg-white hover:border-[#F4538A]/50 hover:bg-[#FFF0F5]/30"
+      }`}
+    >
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${color}`}>
           <Icon className="h-5 w-5 text-white" />
@@ -417,7 +456,7 @@ export default function AdminProductsPage() {
           <p className="text-2xl font-bold text-[#2C1810]">{value}</p>
         </div>
       </div>
-    </div>
+    </button>
   );
 
   if (loading) {
@@ -454,30 +493,40 @@ export default function AdminProductsPage() {
           value={stats.total}
           icon={LayersIcon}
           color="bg-[#F4538A]"
+          isActive={statusFilter === null && typeFilter === null}
+          onClick={clearFilters}
         />
         <StatCard
           title={t("admin.products.stats.active")}
           value={stats.active}
           icon={CheckCircleIcon}
           color="bg-green-500"
+          isActive={statusFilter === "active"}
+          onClick={() => toggleStatusFilter("active")}
         />
         <StatCard
           title={t("admin.products.stats.inactive")}
           value={stats.inactive}
           icon={XCircleIcon}
           color="bg-gray-400"
+          isActive={statusFilter === "inactive"}
+          onClick={() => toggleStatusFilter("inactive")}
         />
         <StatCard
           title={t("admin.products.stats.cookies")}
           value={stats.cookies}
           icon={CookieIcon}
           color="bg-amber-500"
+          isActive={typeFilter === "cookies"}
+          onClick={() => toggleTypeFilter("cookies")}
         />
         <StatCard
           title={t("admin.products.stats.boxes")}
           value={stats.boxes}
           icon={PackageIcon}
           color="bg-blue-500"
+          isActive={typeFilter === "boxes"}
+          onClick={() => toggleTypeFilter("boxes")}
         />
       </div>
 
